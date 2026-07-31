@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Aplicación de Inventario</title>
+<meta name="description" content="Aplicación de inventario: controla artículos, cantidades, notas y checklist de reposición. Todo se guarda en tu dispositivo.">
+<meta name="theme-color" content="#FFC800">
+<meta property="og:title" content="Aplicación de Inventario">
+<meta property="og:description" content="Controla artículos, cantidades, notas y checklist de reposición desde cualquier dispositivo.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%22-6%20-8%20132%20162%22%3E%20%3C%21--%20mecha%20--%3E%20%3Cpath%20d=%22M64%2020C68%202%2080-8%2099-8c-9%207-12%2016-8%2025-8-6-19-4-27%206z%22%20fill=%22%23FFD400%22/%3E%20%3C%21--%20bombillo%20--%3E%20%3Cpath%20d=%22M60%2012c24%200%2044%2019%2044%2043%200%2016-8%2027-14%2035-2%203-2%206-2%209H32c0-3%200-6-2-9-6-8-14-19-14-35%200-24%2020-43%2044-43z%22%20fill=%22%23FFD400%22/%3E%20%3C%21--%20gafas%20--%3E%20%3Cpath%20d=%22M22%2054%2012%2049M98%2054l10-5%22%20stroke=%22%23241F35%22%20stroke-width=%226%22%20stroke-linecap=%22round%22/%3E%20%3Ccircle%20cx=%2241%22%20cy=%2258%22%20r=%2219%22%20fill=%22%23fff%22%20stroke=%22%23241F35%22%20stroke-width=%226%22/%3E%20%3Ccircle%20cx=%2279%22%20cy=%2258%22%20r=%2219%22%20fill=%22%23fff%22%20stroke=%22%23241F35%22%20stroke-width=%226%22/%3E%20%3Ccircle%20cx=%2244%22%20cy=%2258%22%20r=%227%22%20fill=%22%23241F35%22/%3E%20%3Ccircle%20cx=%2276%22%20cy=%2258%22%20r=%227%22%20fill=%22%23241F35%22/%3E%20%3Ccircle%20cx=%2246.5%22%20cy=%2255%22%20r=%222.4%22%20fill=%22%23fff%22/%3E%20%3Ccircle%20cx=%2278.5%22%20cy=%2255%22%20r=%222.4%22%20fill=%22%23fff%22/%3E%20%3C%21--%20sonrisa%20--%3E%20%3Cpath%20d=%22M48%2085q12%2011%2024%200%22%20fill=%22none%22%20stroke=%22%23241F35%22%20stroke-width=%225%22%20stroke-linecap=%22round%22/%3E%20%3C%21--%20casquillo%20--%3E%20%3Crect%20x=%2230%22%20y=%2299%22%20width=%2260%22%20height=%2213%22%20rx=%226%22%20fill=%22%234B41C9%22/%3E%20%3Cpath%20d=%22M36%20114h48l-5%2020c-1%207-7%2011-19%2011s-18-4-19-11z%22%20fill=%22%233C3B44%22/%3E%20%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --am:#FFC800;
+  --am-claro:#FFE38A;
+  --am-palido:#FFF3C4;
+  --az:#0E2C6B;
+  --az-vivo:#2B62F0;
+  --bl:#FFFFFF;
+  --crema:#FFFDF6;
+  --sombra:5px 5px 0 var(--am);
+  --sombra-mini:3px 3px 0 var(--az);
+  --borde:3px solid var(--az);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--crema);
+  color:var(--az);
+  font-family:'Inter',system-ui,sans-serif;
+  font-size:16px;line-height:1.45;
+  padding-bottom:120px;
+  min-height:100vh;
+}
+h1,h2,h3{font-family:'Fraunces',Georgia,serif;font-weight:700;margin:0;letter-spacing:-.01em}
+button,input,select,textarea{font-family:inherit;font-size:16px;color:var(--az)}
+button{cursor:pointer}
+::selection{background:var(--am);color:var(--az)}
+:focus-visible{outline:3px solid var(--az-vivo);outline-offset:2px}
+
+.envoltura{max-width:920px;margin:0 auto;padding:0 14px}
+
+/* ---------- Cabecera ---------- */
+.cabecera{position:sticky;top:0;z-index:30;background:var(--bl);border-bottom:var(--borde);padding:12px 0 10px;box-shadow:0 3px 0 rgba(14,44,107,.06)}
+.cab-fila{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.marca{display:flex;align-items:center;gap:11px;min-width:0}
+.logo{width:40px;height:auto;flex:0 0 auto}
+.cab-fila h1{font-size:22px;line-height:1.1;display:inline-block;padding:0 4px;background:linear-gradient(transparent 58%,var(--am) 58%)}
+.cab-fila .sub{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;opacity:.75;display:block;margin-top:3px}
+.stats{display:flex;gap:8px;overflow-x:auto;padding:10px 0 2px;scrollbar-width:none}
+.stats::-webkit-scrollbar{display:none}
+.stat{flex:0 0 auto;background:var(--am);border:var(--borde);border-radius:12px;padding:6px 10px;box-shadow:var(--sombra-mini);min-width:88px}
+.stat b{display:block;font-family:'Space Mono',monospace;font-size:19px;line-height:1.1}
+.stat span{font-size:10px;letter-spacing:.1em;text-transform:uppercase;opacity:.7}
+.stat.alerta{background:var(--az);color:var(--am)}
+.stat.alerta span{opacity:.85}
+
+/* ---------- Pestañas ---------- */
+.tabs{position:sticky;top:0;z-index:20;background:var(--crema);padding:10px 0 12px;display:flex;gap:8px}
+.tab{flex:1;background:var(--bl);border:var(--borde);border-radius:12px;padding:11px 4px;font-weight:600;font-size:14px;box-shadow:var(--sombra-mini);transition:transform .12s,box-shadow .12s,background .12s}
+.tab:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--az)}
+.tab.activa{background:var(--am);color:var(--az);box-shadow:none;transform:translate(2px,2px)}
+
+/* ---------- Barra de filtros ---------- */
+.barra{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.barra input[type=search]{flex:1 1 100%;min-width:0}
+input,select,textarea{
+  background:var(--bl);border:var(--borde);border-radius:11px;
+  padding:11px 12px;width:100%;box-shadow:var(--sombra-mini);appearance:none;
+  transition:box-shadow .12s;
+}
+select{background-image:linear-gradient(45deg,transparent 50%,var(--az) 50%),linear-gradient(135deg,var(--az) 50%,transparent 50%);background-position:calc(100% - 17px) 20px,calc(100% - 12px) 20px;background-size:5px 5px,5px 5px;background-repeat:no-repeat;padding-right:34px}
+.barra select{flex:1 1 40%;width:auto}
+textarea{resize:vertical;min-height:80px;line-height:1.5}
+.interruptor{flex:1 1 100%;background:var(--bl);border:var(--borde);border-radius:11px;padding:10px;font-weight:600;font-size:14px;box-shadow:var(--sombra-mini);transition:transform .12s,box-shadow .12s,background .12s}
+.interruptor[aria-pressed="true"]{background:var(--am);color:var(--az);box-shadow:none;transform:translate(2px,2px)}
+
+/* ---------- Tarjetas ---------- */
+.rejilla{display:grid;gap:12px}
+.ficha{
+  background:var(--bl);border:var(--borde);border-radius:14px;
+  padding:13px;box-shadow:var(--sombra);position:relative;
+  animation:entra .18s ease-out both;
+  transition:transform .14s,box-shadow .14s;
+}
+@keyframes entra{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.ficha.baja{background:var(--am-palido)}
+.ficha-top{display:flex;gap:10px;align-items:flex-start;justify-content:space-between}
+.ficha h3{font-size:18px;line-height:1.2;word-break:break-word}
+.ubic{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase;opacity:.72;margin-top:3px;display:block}
+.sello{
+  display:inline-block;margin-top:7px;background:var(--am);color:var(--az);border:2px solid var(--az);
+  font-family:'Space Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.16em;
+  padding:3px 7px;border-radius:4px;transform:rotate(-2.5deg)
+}
+.dial{display:flex;align-items:center;gap:6px;flex:0 0 auto}
+.dial button{width:38px;height:38px;border:var(--borde);border-radius:10px;background:var(--bl);font-size:20px;font-weight:700;line-height:1;display:grid;place-items:center;padding:0;transition:background .12s}
+.dial button:active{background:var(--am-claro)}
+.dial .cifra{font-family:'Space Mono',monospace;font-weight:700;font-size:20px;min-width:46px;text-align:center}
+.etiquetas{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.etq{font-family:'Space Mono',monospace;font-size:11px;background:var(--am-claro);border:2px solid var(--az);border-radius:7px;padding:2px 7px}
+.ficha .nota{margin:10px 0 0;font-size:14px;white-space:pre-wrap;border-left:3px solid var(--am);padding-left:9px;opacity:.9}
+.acciones{display:flex;gap:7px;margin-top:12px;flex-wrap:wrap}
+
+/* ---------- Botones ---------- */
+.btn{background:var(--am);color:var(--az);border:var(--borde);border-radius:11px;padding:10px 14px;font-weight:600;font-size:14px;box-shadow:var(--sombra-mini);transition:transform .12s,box-shadow .12s,background .12s}
+.btn:active{transform:translate(2px,2px);box-shadow:none}
+.btn.claro{background:var(--bl);color:var(--az)}
+.btn.mini{padding:7px 11px;font-size:13px;border-width:2px;box-shadow:2px 2px 0 var(--az)}
+.btn.ancho{width:100%}
+.fab{
+  position:fixed;right:16px;bottom:20px;z-index:25;
+  width:60px;height:60px;border-radius:50%;border:var(--borde);
+  background:var(--am);color:var(--az);font-size:32px;line-height:1;
+  box-shadow:5px 5px 0 rgba(14,44,107,.35);display:grid;place-items:center;padding:0 0 4px;
+  transition:transform .12s,box-shadow .12s;
+}
+.fab:active{transform:translate(3px,3px);box-shadow:2px 2px 0 rgba(14,44,107,.35)}
+
+/* ---------- Estados al pasar el cursor (solo escritorio) ---------- */
+@media (hover:hover) and (pointer:fine){
+  .btn:hover{transform:translate(-1px,-1px);box-shadow:4px 4px 0 var(--az)}
+  .btn.mini:hover{box-shadow:3px 3px 0 var(--az)}
+  .tab:not(.activa):hover{transform:translate(-1px,-1px);box-shadow:4px 4px 0 var(--az)}
+  .interruptor:not([aria-pressed="true"]):hover{transform:translate(-1px,-1px);box-shadow:4px 4px 0 var(--az)}
+  .ficha:hover{transform:translate(-2px,-2px);box-shadow:7px 7px 0 var(--am)}
+  .dial button:hover{background:var(--am-claro)}
+  .fab:hover{transform:translate(-2px,-2px);box-shadow:7px 7px 0 rgba(14,44,107,.35)}
+  .tarea .quitar:hover{opacity:1}
+}
+
+/* ---------- Vacíos ---------- */
+.vacio{background:var(--bl);border:3px dashed var(--az);border-radius:14px;padding:26px 18px;text-align:center}
+.vacio h3{font-size:19px;margin-bottom:6px}
+.vacio p{margin:0;font-size:14px;opacity:.8}
+
+/* ---------- Notas ---------- */
+.nota-tarjeta{background:var(--bl);border:var(--borde);border-radius:14px;box-shadow:var(--sombra);padding:12px}
+.nota-tarjeta input{border:none;box-shadow:none;padding:0 0 6px;font-family:'Fraunces',serif;font-weight:700;font-size:18px;border-radius:0;border-bottom:2px solid var(--am)}
+.nota-tarjeta textarea{border:none;box-shadow:none;padding:8px 0 0;min-height:96px}
+.nota-pie{display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;opacity:.7}
+
+/* ---------- Checklist ---------- */
+.progreso{background:var(--bl);border:var(--borde);border-radius:12px;padding:11px 13px;box-shadow:var(--sombra-mini);margin-bottom:12px}
+.progreso-cab{display:flex;justify-content:space-between;font-family:'Space Mono',monospace;font-size:12px;margin-bottom:7px}
+.riel{height:12px;background:var(--bl);border:2px solid var(--az);border-radius:8px;overflow:hidden}
+.relleno{height:100%;background:var(--am);width:0;transition:width .25s ease}
+.tarea{display:flex;align-items:flex-start;gap:10px;background:var(--bl);border:var(--borde);border-radius:12px;padding:11px;box-shadow:var(--sombra-mini)}
+.caja{flex:0 0 auto;width:28px;height:28px;border:var(--borde);border-radius:8px;background:var(--bl);display:grid;place-items:center;font-size:17px;font-weight:700;line-height:1;padding:0;color:var(--az);transition:background .12s}
+.tarea.lista .caja{background:var(--am);color:var(--az)}
+.tarea.lista .texto{text-decoration:line-through;opacity:.5}
+.tarea .texto{flex:1;font-size:15px;word-break:break-word;padding-top:3px}
+.tarea .quitar{background:none;border:none;font-size:19px;padding:0 4px;line-height:1;opacity:.55;transition:opacity .12s}
+.fila-agregar{display:flex;gap:8px;margin-bottom:12px}
+.fila-agregar input{flex:1}
+
+/* ---------- Modal ---------- */
+.velo{position:fixed;inset:0;background:rgba(14,44,107,.5);z-index:60;display:flex;align-items:flex-end;justify-content:center;padding:0;backdrop-filter:blur(2px)}
+.velo[hidden]{display:none}
+.hoja{background:var(--bl);border-top:var(--borde);border-radius:20px 20px 0 0;width:100%;max-width:520px;max-height:92vh;overflow-y:auto;padding:16px 16px calc(24px + env(safe-area-inset-bottom));animation:sube .2s ease-out both}
+@keyframes sube{from{transform:translateY(24px)}to{transform:none}}
+.hoja h2{font-size:21px;margin-bottom:12px}
+.campo{margin-bottom:11px}
+.campo label{display:block;font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:5px}
+.dupla{display:flex;gap:9px}
+.dupla .campo{flex:1}
+.error{background:var(--az);color:var(--am);border-radius:9px;padding:8px 11px;font-size:13px;margin-bottom:11px}
+.error[hidden]{display:none}
+.hoja-acciones{display:flex;gap:9px;margin-top:6px}
+.hoja-acciones .btn{flex:1}
+
+/* ---------- Aviso ---------- */
+.aviso{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:80;background:var(--az);color:var(--bl);border-radius:12px;padding:11px 14px;display:flex;align-items:center;gap:12px;box-shadow:5px 5px 0 rgba(14,44,107,.3);font-size:14px;max-width:calc(100% - 28px);animation:entra .18s ease-out both}
+.aviso[hidden]{display:none}
+.aviso button{background:var(--am);color:var(--az);border:none;border-radius:8px;padding:6px 10px;font-weight:700;font-size:13px;white-space:nowrap}
+
+/* ---------- Pie de página ---------- */
+.pie{margin-top:34px;text-align:center;font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;opacity:.6}
+.pie p{margin:4px 0}
+
+.oculto{display:none !important}
+.respaldo{width:100%;min-height:130px;font-family:'Space Mono',monospace;font-size:11px;margin-top:8px}
+
+@media (min-width:700px){
+  .rejilla{grid-template-columns:1fr 1fr}
+  .cab-fila h1{font-size:28px}
+  .logo{width:50px}
+  .velo{align-items:center;padding:20px}
+  .hoja{border-radius:18px;border:var(--borde);box-shadow:var(--sombra)}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important}html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+
+<header class="cabecera">
+  <div class="envoltura">
+    <div class="cab-fila">
+      <div class="marca">
+        <svg class="logo" role="img" aria-label="Logo de la aplicación" xmlns="http://www.w3.org/2000/svg" viewBox="-6 -8 132 162">
+        <!-- mecha -->
+        <path d="M64 20C68 2 80-8 99-8c-9 7-12 16-8 25-8-6-19-4-27 6z" fill="#FFD400"/>
+        <!-- bombillo -->
+        <path d="M60 12c24 0 44 19 44 43 0 16-8 27-14 35-2 3-2 6-2 9H32c0-3 0-6-2-9-6-8-14-19-14-35 0-24 20-43 44-43z" fill="#FFD400"/>
+        <!-- gafas -->
+        <path d="M22 54 12 49M98 54l10-5" stroke="#241F35" stroke-width="6" stroke-linecap="round"/>
+        <circle cx="41" cy="58" r="19" fill="#fff" stroke="#241F35" stroke-width="6"/>
+        <circle cx="79" cy="58" r="19" fill="#fff" stroke="#241F35" stroke-width="6"/>
+        <circle cx="44" cy="58" r="7" fill="#241F35"/>
+        <circle cx="76" cy="58" r="7" fill="#241F35"/>
+        <circle cx="46.5" cy="55" r="2.4" fill="#fff"/>
+        <circle cx="78.5" cy="55" r="2.4" fill="#fff"/>
+        <!-- sonrisa -->
+        <path d="M48 85q12 11 24 0" fill="none" stroke="#241F35" stroke-width="5" stroke-linecap="round"/>
+        <!-- casquillo -->
+        <rect x="30" y="99" width="60" height="13" rx="6" fill="#4B41C9"/>
+        <path d="M36 114h48l-5 20c-1 7-7 11-19 11s-18-4-19-11z" fill="#3C3B44"/>
+        </svg>
+        <div>
+          <h1>Aplicación de Inventario</h1>
+          <span class="sub">Artículos · Notas · Checklist</span>
+        </div>
+      </div>
+      <button class="btn mini claro" data-action="abrir-datos">Datos</button>
+    </div>
+    <div class="stats" id="stats"></div>
+  </div>
+</header>
+
+<div class="envoltura">
+  <nav class="tabs" role="tablist">
+    <button class="tab activa" data-action="tab" data-tab="inventario" role="tab" aria-selected="true">Artículos</button>
+    <button class="tab" data-action="tab" data-tab="notas" role="tab" aria-selected="false">Notas</button>
+    <button class="tab" data-action="tab" data-tab="checklist" role="tab" aria-selected="false">Checklist</button>
+  </nav>
+
+  <main>
+    <!-- INVENTARIO -->
+    <section id="v-inventario">
+      <div class="barra">
+        <input type="search" id="buscar" data-input="buscar" placeholder="Buscar por nombre, categoría o lugar" aria-label="Buscar artículos">
+        <select id="f-cat" data-input="cat" aria-label="Filtrar por categoría"><option value="">Todas las categorías</option></select>
+        <select id="f-orden" data-input="orden" aria-label="Ordenar">
+          <option value="recientes">Más recientes</option>
+          <option value="az">Nombre A–Z</option>
+          <option value="menos">Menor cantidad</option>
+          <option value="mas">Mayor cantidad</option>
+        </select>
+        <button class="interruptor" data-action="toggle-bajos" aria-pressed="false">Ver solo bajo mínimo</button>
+      </div>
+      <div class="rejilla" id="lista-items"></div>
+    </section>
+
+    <!-- NOTAS -->
+    <section id="v-notas" class="oculto">
+      <button class="btn ancho" data-action="nueva-nota" style="margin-bottom:12px">+ Nueva nota</button>
+      <div class="rejilla" id="lista-notas"></div>
+    </section>
+
+    <!-- CHECKLIST -->
+    <section id="v-checklist" class="oculto">
+      <div class="fila-agregar">
+        <input type="text" id="nueva-tarea" data-enter="tarea" placeholder="Añadir tarea" aria-label="Nueva tarea">
+        <button class="btn" data-action="agregar-tarea">Añadir</button>
+      </div>
+      <div class="progreso">
+        <div class="progreso-cab"><span id="prog-texto">0 de 0</span><span id="prog-pct">0%</span></div>
+        <div class="riel"><div class="relleno" id="prog-relleno"></div></div>
+      </div>
+      <div class="barra">
+        <button class="btn mini claro" data-action="tareas-desde-bajos">Traer artículos bajo mínimo</button>
+        <button class="btn mini claro" data-action="limpiar-hechas">Quitar completadas</button>
+      </div>
+      <div class="rejilla" id="lista-tareas"></div>
+    </section>
+  </main>
+
+  <footer class="pie">
+    <p>Aplicación de Inventario</p>
+    <p>Tus datos se guardan solo en este dispositivo</p>
+  </footer>
+</div>
+
+<button class="fab" id="fab" data-action="nuevo-item" aria-label="Añadir artículo">+</button>
+
+<!-- Modal artículo -->
+<div class="velo" id="modal-item" hidden>
+  <div class="hoja" role="dialog" aria-modal="true" aria-labelledby="modal-titulo">
+    <h2 id="modal-titulo">Nuevo artículo</h2>
+    <div class="error" id="modal-error" hidden></div>
+    <div class="campo">
+      <label for="c-nombre">Nombre</label>
+      <input type="text" id="c-nombre" placeholder="Ej: Cuadernos argollados">
+    </div>
+    <div class="dupla">
+      <div class="campo">
+        <label for="c-cantidad">Cantidad</label>
+        <input type="number" id="c-cantidad" inputmode="decimal" step="any" value="1">
+      </div>
+      <div class="campo">
+        <label for="c-unidad">Unidad</label>
+        <input type="text" id="c-unidad" placeholder="u, kg, caja" value="u">
+      </div>
+    </div>
+    <div class="dupla">
+      <div class="campo">
+        <label for="c-minimo">Mínimo</label>
+        <input type="number" id="c-minimo" inputmode="decimal" step="any" value="0">
+      </div>
+      <div class="campo">
+        <label for="c-precio">Precio unitario</label>
+        <input type="number" id="c-precio" inputmode="decimal" step="any" value="0">
+      </div>
+    </div>
+    <div class="campo">
+      <label for="c-categoria">Categoría</label>
+      <input type="text" id="c-categoria" list="lista-cats" placeholder="Ej: Papelería">
+      <datalist id="lista-cats"></datalist>
+    </div>
+    <div class="campo">
+      <label for="c-lugar">Lugar</label>
+      <input type="text" id="c-lugar" placeholder="Ej: Estante 2">
+    </div>
+    <div class="campo">
+      <label for="c-nota">Nota</label>
+      <textarea id="c-nota" placeholder="Detalles, proveedor, vencimiento…"></textarea>
+    </div>
+    <div class="hoja-acciones">
+      <button class="btn claro" data-action="cerrar-modal">Cancelar</button>
+      <button class="btn" data-action="guardar-item">Guardar artículo</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal datos -->
+<div class="velo" id="modal-datos" hidden>
+  <div class="hoja" role="dialog" aria-modal="true" aria-labelledby="datos-titulo">
+    <h2 id="datos-titulo">Datos</h2>
+    <p style="font-size:14px;margin-top:0">Todo se guarda en este dispositivo. Descarga una copia si vas a cambiar de navegador.</p>
+    <div class="hoja-acciones" style="flex-direction:column">
+      <button class="btn ancho" data-action="exportar">Descargar copia (.json)</button>
+      <button class="btn claro ancho" data-action="importar">Cargar copia desde archivo</button>
+      <button class="btn claro ancho" data-action="borrar-todo">Borrar todo</button>
+      <button class="btn claro ancho" data-action="cerrar-datos">Cerrar</button>
+    </div>
+    <textarea class="respaldo oculto" id="respaldo-texto" readonly aria-label="Copia de seguridad en texto"></textarea>
+    <input type="file" id="archivo" accept="application/json,.json" data-input="archivo" class="oculto">
+  </div>
+</div>
+
+<div class="aviso" id="aviso" hidden><span id="aviso-texto"></span><button id="aviso-btn" data-action="deshacer" hidden>Deshacer</button></div>
+
+<script>
+(function(){
+  'use strict';
+
+  var CLAVE = 'inventario-app-v1';
+  var estado = { items: [], notas: [], tareas: [] };
+  var vista = 'inventario';
+  var filtro = { texto:'', cat:'', orden:'recientes', bajos:false };
+  var editandoItem = null;
+  var papelera = null;
+  var avisoTimer = null, guardarTimer = null;
+
+  function $(s){ return document.querySelector(s); }
+  function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+  function esc(v){
+    return String(v == null ? '' : v).replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+  function num(v){ var n = parseFloat(String(v).replace(',', '.')); return isNaN(n) ? 0 : n; }
+  function fmt(n){ n = Number(n) || 0; return Number.isInteger(n) ? String(n) : String(Math.round(n*100)/100); }
+  function plata(n){ return '$' + Math.round(Number(n) || 0).toLocaleString('es-CO'); }
+  function fecha(t){
+    if(!t) return '';
+    var d = new Date(t);
+    if(isNaN(d.getTime())) return '';
+    return d.toLocaleDateString('es-CO', { day:'2-digit', month:'short' });
+  }
+
+  /* ---------- Guardado ---------- */
+  var almacen = {
+    leer: function(){
+      if(window.storage && typeof window.storage.get === 'function'){
+        return window.storage.get(CLAVE).then(function(r){
+          return r && r.value ? JSON.parse(r.value) : null;
+        }).catch(function(){ return null; });
+      }
+      try{
+        var raw = window.localStorage.getItem(CLAVE);
+        return Promise.resolve(raw ? JSON.parse(raw) : null);
+      }catch(e){ return Promise.resolve(null); }
+    },
+    escribir: function(datos){
+      var s = JSON.stringify(datos);
+      if(window.storage && typeof window.storage.set === 'function'){
+        return window.storage.set(CLAVE, s).catch(function(){ return null; });
+      }
+      try{ window.localStorage.setItem(CLAVE, s); }catch(e){}
+      return Promise.resolve(true);
+    }
+  };
+  function guardar(){
+    clearTimeout(guardarTimer);
+    guardarTimer = setTimeout(function(){ almacen.escribir(estado); }, 200);
+  }
+
+  /* ---------- Aviso ---------- */
+  function aviso(texto, conDeshacer){
+    var caja = $('#aviso'), btn = $('#aviso-btn');
+    $('#aviso-texto').textContent = texto;
+    btn.hidden = !conDeshacer;
+    caja.hidden = false;
+    clearTimeout(avisoTimer);
+    avisoTimer = setTimeout(function(){ caja.hidden = true; papelera = null; }, 6000);
+  }
+
+  /* ---------- Cálculos ---------- */
+  function esBajo(it){ return num(it.minimo) > 0 && num(it.cantidad) <= num(it.minimo); }
+
+  function itemsFiltrados(){
+    var t = filtro.texto.trim().toLowerCase();
+    var lista = estado.items.filter(function(it){
+      if(filtro.cat && (it.categoria || '') !== filtro.cat) return false;
+      if(filtro.bajos && !esBajo(it)) return false;
+      if(!t) return true;
+      return ((it.nombre||'') + ' ' + (it.categoria||'') + ' ' + (it.lugar||'') + ' ' + (it.nota||'')).toLowerCase().indexOf(t) !== -1;
+    });
+    var o = filtro.orden;
+    lista.sort(function(a,b){
+      if(o === 'az') return (a.nombre||'').localeCompare(b.nombre||'', 'es');
+      if(o === 'menos') return num(a.cantidad) - num(b.cantidad);
+      if(o === 'mas') return num(b.cantidad) - num(a.cantidad);
+      return (b.creado || 0) - (a.creado || 0);
+    });
+    return lista;
+  }
+
+  /* ---------- Render ---------- */
+  function render(){
+    renderStats();
+    renderTabs();
+    renderItems();
+    renderNotas();
+    renderTareas();
+  }
+
+  function renderStats(){
+    var unidades = 0, valor = 0, bajos = 0;
+    estado.items.forEach(function(it){
+      unidades += num(it.cantidad);
+      valor += num(it.cantidad) * num(it.precio);
+      if(esBajo(it)) bajos++;
+    });
+    var pend = estado.tareas.filter(function(t){ return !t.hecha; }).length;
+    $('#stats').innerHTML =
+      '<div class="stat"><b>' + estado.items.length + '</b><span>Artículos</span></div>' +
+      '<div class="stat"><b>' + fmt(unidades) + '</b><span>Unidades</span></div>' +
+      '<div class="stat' + (bajos ? ' alerta' : '') + '"><b>' + bajos + '</b><span>Bajo mínimo</span></div>' +
+      '<div class="stat"><b>' + plata(valor) + '</b><span>Valor total</span></div>' +
+      '<div class="stat"><b>' + pend + '</b><span>Pendientes</span></div>';
+  }
+
+  function renderTabs(){
+    var tabs = document.querySelectorAll('.tab');
+    for(var i = 0; i < tabs.length; i++){
+      var act = tabs[i].getAttribute('data-tab') === vista;
+      tabs[i].classList.toggle('activa', act);
+      tabs[i].setAttribute('aria-selected', act ? 'true' : 'false');
+    }
+    $('#v-inventario').classList.toggle('oculto', vista !== 'inventario');
+    $('#v-notas').classList.toggle('oculto', vista !== 'notas');
+    $('#v-checklist').classList.toggle('oculto', vista !== 'checklist');
+    $('#fab').classList.toggle('oculto', vista !== 'inventario');
+  }
+
+  function renderCats(){
+    var cats = [];
+    estado.items.forEach(function(it){
+      if(it.categoria && cats.indexOf(it.categoria) === -1) cats.push(it.categoria);
+    });
+    cats.sort(function(a,b){ return a.localeCompare(b, 'es'); });
+    var sel = $('#f-cat');
+    var actual = filtro.cat;
+    var html = '<option value="">Todas las categorías</option>';
+    cats.forEach(function(c){
+      html += '<option value="' + esc(c) + '"' + (c === actual ? ' selected' : '') + '>' + esc(c) + '</option>';
+    });
+    sel.innerHTML = html;
+    $('#lista-cats').innerHTML = cats.map(function(c){ return '<option value="' + esc(c) + '"></option>'; }).join('');
+  }
+
+  function renderItems(){
+    renderCats();
+    var lista = itemsFiltrados();
+    var cont = $('#lista-items');
+    if(!estado.items.length){
+      cont.innerHTML = '<div class="vacio"><h3>Aún no hay artículos</h3><p>Toca el botón + para registrar el primero.</p></div>';
+      return;
+    }
+    if(!lista.length){
+      cont.innerHTML = '<div class="vacio"><h3>Sin resultados</h3><p>Cambia la búsqueda o los filtros para ver más.</p></div>';
+      return;
+    }
+    cont.innerHTML = lista.map(function(it){
+      var bajo = esBajo(it);
+      var etiquetas = '';
+      if(it.categoria) etiquetas += '<span class="etq">' + esc(it.categoria) + '</span>';
+      if(num(it.minimo) > 0) etiquetas += '<span class="etq">mín ' + fmt(it.minimo) + '</span>';
+      if(num(it.precio) > 0) etiquetas += '<span class="etq">' + plata(it.precio) + ' c/u</span>';
+      if(num(it.precio) > 0) etiquetas += '<span class="etq">= ' + plata(num(it.precio) * num(it.cantidad)) + '</span>';
+      return '<article class="ficha' + (bajo ? ' baja' : '') + '">' +
+        '<div class="ficha-top">' +
+          '<div>' +
+            '<h3>' + esc(it.nombre) + '</h3>' +
+            (it.lugar ? '<span class="ubic">' + esc(it.lugar) + '</span>' : '') +
+            (bajo ? '<span class="sello">BAJO MÍNIMO</span>' : '') +
+          '</div>' +
+          '<div class="dial">' +
+            '<button data-action="restar" data-id="' + it.id + '" aria-label="Restar uno">−</button>' +
+            '<span class="cifra">' + fmt(it.cantidad) + '<span style="font-size:11px;display:block;font-weight:400">' + esc(it.unidad || 'u') + '</span></span>' +
+            '<button data-action="sumar" data-id="' + it.id + '" aria-label="Sumar uno">+</button>' +
+          '</div>' +
+        '</div>' +
+        (etiquetas ? '<div class="etiquetas">' + etiquetas + '</div>' : '') +
+        (it.nota ? '<p class="nota">' + esc(it.nota) + '</p>' : '') +
+        '<div class="acciones">' +
+          '<button class="btn mini claro" data-action="editar-item" data-id="' + it.id + '">Editar</button>' +
+          '<button class="btn mini claro" data-action="a-checklist" data-id="' + it.id + '">A la checklist</button>' +
+          '<button class="btn mini claro" data-action="borrar-item" data-id="' + it.id + '">Borrar</button>' +
+        '</div>' +
+      '</article>';
+    }).join('');
+  }
+
+  function renderNotas(){
+    var cont = $('#lista-notas');
+    if(!estado.notas.length){
+      cont.innerHTML = '<div class="vacio"><h3>Sin notas</h3><p>Guarda aquí proveedores, medidas o recordatorios sueltos.</p></div>';
+      return;
+    }
+    cont.innerHTML = estado.notas.map(function(n){
+      return '<article class="nota-tarjeta">' +
+        '<input type="text" value="' + esc(n.titulo) + '" data-input="nota-titulo" data-id="' + n.id + '" placeholder="Título" aria-label="Título de la nota">' +
+        '<textarea data-input="nota-texto" data-id="' + n.id + '" placeholder="Escribe aquí…" aria-label="Contenido de la nota">' + esc(n.texto) + '</textarea>' +
+        '<div class="nota-pie"><span>' + esc(fecha(n.actualizado)) + '</span>' +
+        '<button class="btn mini claro" data-action="borrar-nota" data-id="' + n.id + '">Borrar</button></div>' +
+      '</article>';
+    }).join('');
+  }
+
+  function renderTareas(){
+    var hechas = estado.tareas.filter(function(t){ return t.hecha; }).length;
+    var total = estado.tareas.length;
+    var pct = total ? Math.round(hechas / total * 100) : 0;
+    $('#prog-texto').textContent = hechas + ' de ' + total + ' listas';
+    $('#prog-pct').textContent = pct + '%';
+    $('#prog-relleno').style.width = pct + '%';
+    var cont = $('#lista-tareas');
+    if(!total){
+      cont.innerHTML = '<div class="vacio"><h3>Checklist vacía</h3><p>Escribe una tarea arriba o trae los artículos que están bajo mínimo.</p></div>';
+      return;
+    }
+    cont.innerHTML = estado.tareas.map(function(t){
+      return '<div class="tarea' + (t.hecha ? ' lista' : '') + '">' +
+        '<button class="caja" data-action="marcar" data-id="' + t.id + '" aria-pressed="' + (t.hecha ? 'true' : 'false') + '" aria-label="Marcar tarea">' + (t.hecha ? '✓' : '') + '</button>' +
+        '<span class="texto">' + esc(t.texto) + '</span>' +
+        '<button class="quitar" data-action="borrar-tarea" data-id="' + t.id + '" aria-label="Quitar tarea">×</button>' +
+      '</div>';
+    }).join('');
+  }
+
+  /* ---------- Modal artículo ---------- */
+  function abrirModal(item){
+    editandoItem = item || null;
+    $('#modal-titulo').textContent = item ? 'Editar artículo' : 'Nuevo artículo';
+    $('#modal-error').hidden = true;
+    $('#c-nombre').value = item ? item.nombre : '';
+    $('#c-cantidad').value = item ? item.cantidad : 1;
+    $('#c-unidad').value = item ? (item.unidad || 'u') : 'u';
+    $('#c-minimo').value = item ? item.minimo : 0;
+    $('#c-precio').value = item ? item.precio : 0;
+    $('#c-categoria').value = item ? (item.categoria || '') : '';
+    $('#c-lugar').value = item ? (item.lugar || '') : '';
+    $('#c-nota').value = item ? (item.nota || '') : '';
+    $('#modal-item').hidden = false;
+    setTimeout(function(){ try{ $('#c-nombre').focus(); }catch(e){} }, 30);
+  }
+  function cerrarModal(){ $('#modal-item').hidden = true; editandoItem = null; }
+
+  function guardarItem(){
+    var nombre = $('#c-nombre').value.trim();
+    if(!nombre){
+      var err = $('#modal-error');
+      err.textContent = 'Escribe un nombre para el artículo.';
+      err.hidden = false;
+      $('#c-nombre').focus();
+      return;
+    }
+    var datos = {
+      nombre: nombre,
+      cantidad: num($('#c-cantidad').value),
+      unidad: $('#c-unidad').value.trim() || 'u',
+      minimo: num($('#c-minimo').value),
+      precio: num($('#c-precio').value),
+      categoria: $('#c-categoria').value.trim(),
+      lugar: $('#c-lugar').value.trim(),
+      nota: $('#c-nota').value.trim()
+    };
+    if(editandoItem){
+      for(var k in datos){ editandoItem[k] = datos[k]; }
+      editandoItem.actualizado = Date.now();
+      aviso('Artículo actualizado');
+    }else{
+      datos.id = uid();
+      datos.creado = Date.now();
+      datos.actualizado = Date.now();
+      estado.items.push(datos);
+      aviso('Artículo guardado');
+    }
+    cerrarModal();
+    guardar();
+    render();
+  }
+
+  function buscarItem(id){
+    for(var i = 0; i < estado.items.length; i++){ if(estado.items[i].id === id) return estado.items[i]; }
+    return null;
+  }
+
+  /* ---------- Datos ---------- */
+  function exportar(){
+    var texto = JSON.stringify(estado, null, 2);
+    try{
+      var blob = new Blob([texto], { type:'application/json' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'inventario-' + new Date().toISOString().slice(0,10) + '.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function(){ URL.revokeObjectURL(url); }, 800);
+      aviso('Copia descargada');
+    }catch(e){
+      var ta = $('#respaldo-texto');
+      ta.value = texto;
+      ta.classList.remove('oculto');
+      ta.select();
+      aviso('Copia el texto de abajo para guardarlo');
+    }
+  }
+
+  function aplicarImportado(obj){
+    if(!obj || typeof obj !== 'object') throw new Error('formato');
+    estado = {
+      items: Array.isArray(obj.items) ? obj.items : [],
+      notas: Array.isArray(obj.notas) ? obj.notas : [],
+      tareas: Array.isArray(obj.tareas) ? obj.tareas : []
+    };
+    estado.items.forEach(function(it){ if(!it.id) it.id = uid(); if(!it.creado) it.creado = Date.now(); });
+    estado.notas.forEach(function(n){ if(!n.id) n.id = uid(); });
+    estado.tareas.forEach(function(t){ if(!t.id) t.id = uid(); });
+    guardar();
+    render();
+  }
+
+  /* ---------- Eventos ---------- */
+  document.addEventListener('click', function(e){
+    var el = e.target.closest ? e.target.closest('[data-action]') : null;
+    if(!el) return;
+    var acc = el.getAttribute('data-action');
+    var id = el.getAttribute('data-id');
+    var it, idx;
+
+    if(acc === 'tab'){
+      vista = el.getAttribute('data-tab');
+      renderTabs();
+      try{ window.scrollTo(0, 0); }catch(err){}
+      return;
+    }
+    if(acc === 'nuevo-item'){ abrirModal(null); return; }
+    if(acc === 'cerrar-modal'){ cerrarModal(); return; }
+    if(acc === 'guardar-item'){ guardarItem(); return; }
+    if(acc === 'editar-item'){ it = buscarItem(id); if(it) abrirModal(it); return; }
+
+    if(acc === 'sumar' || acc === 'restar'){
+      it = buscarItem(id);
+      if(!it) return;
+      var nuevo = num(it.cantidad) + (acc === 'sumar' ? 1 : -1);
+      it.cantidad = nuevo < 0 ? 0 : nuevo;
+      it.actualizado = Date.now();
+      guardar();
+      renderStats();
+      renderItems();
+      return;
+    }
+
+    if(acc === 'borrar-item'){
+      idx = estado.items.findIndex(function(x){ return x.id === id; });
+      if(idx === -1) return;
+      papelera = { tipo:'item', dato: estado.items[idx], idx: idx };
+      estado.items.splice(idx, 1);
+      guardar();
+      render();
+      aviso('Artículo eliminado', true);
+      return;
+    }
+
+    if(acc === 'a-checklist'){
+      it = buscarItem(id);
+      if(!it) return;
+      var txt = 'Reponer ' + it.nombre;
+      if(!estado.tareas.some(function(t){ return t.texto === txt; })){
+        estado.tareas.unshift({ id: uid(), texto: txt, hecha: false, creado: Date.now() });
+        guardar();
+        renderStats();
+        renderTareas();
+        aviso('Añadido a la checklist');
+      }else{
+        aviso('Ya estaba en la checklist');
+      }
+      return;
+    }
+
+    if(acc === 'nueva-nota'){
+      estado.notas.unshift({ id: uid(), titulo:'', texto:'', actualizado: Date.now() });
+      guardar();
+      renderNotas();
+      var primera = document.querySelector('#lista-notas input');
+      if(primera) primera.focus();
+      return;
+    }
+    if(acc === 'borrar-nota'){
+      idx = estado.notas.findIndex(function(x){ return x.id === id; });
+      if(idx === -1) return;
+      papelera = { tipo:'nota', dato: estado.notas[idx], idx: idx };
+      estado.notas.splice(idx, 1);
+      guardar();
+      renderNotas();
+      aviso('Nota eliminada', true);
+      return;
+    }
+
+    if(acc === 'agregar-tarea'){ agregarTarea(); return; }
+    if(acc === 'marcar'){
+      estado.tareas.forEach(function(t){ if(t.id === id) t.hecha = !t.hecha; });
+      guardar();
+      renderStats();
+      renderTareas();
+      return;
+    }
+    if(acc === 'borrar-tarea'){
+      idx = estado.tareas.findIndex(function(x){ return x.id === id; });
+      if(idx === -1) return;
+      papelera = { tipo:'tarea', dato: estado.tareas[idx], idx: idx };
+      estado.tareas.splice(idx, 1);
+      guardar();
+      renderStats();
+      renderTareas();
+      aviso('Tarea eliminada', true);
+      return;
+    }
+    if(acc === 'tareas-desde-bajos'){
+      var suma = 0;
+      estado.items.forEach(function(x){
+        if(!esBajo(x)) return;
+        var t = 'Reponer ' + x.nombre;
+        if(!estado.tareas.some(function(y){ return y.texto === t; })){
+          estado.tareas.unshift({ id: uid(), texto: t, hecha: false, creado: Date.now() });
+          suma++;
+        }
+      });
+      guardar();
+      renderStats();
+      renderTareas();
+      aviso(suma ? ('Se añadieron ' + suma + ' tareas') : 'No hay artículos bajo mínimo');
+      return;
+    }
+    if(acc === 'limpiar-hechas'){
+      var antes = estado.tareas.length;
+      estado.tareas = estado.tareas.filter(function(t){ return !t.hecha; });
+      guardar();
+      renderStats();
+      renderTareas();
+      aviso((antes - estado.tareas.length) + ' tareas quitadas');
+      return;
+    }
+
+    if(acc === 'abrir-datos'){ $('#modal-datos').hidden = false; return; }
+    if(acc === 'cerrar-datos'){
+      $('#modal-datos').hidden = true;
+      $('#respaldo-texto').classList.add('oculto');
+      var bt = document.querySelector('[data-action="borrar-todo"]');
+      if(bt){ bt.textContent = 'Borrar todo'; bt.removeAttribute('data-confirmar'); }
+      return;
+    }
+    if(acc === 'exportar'){ exportar(); return; }
+    if(acc === 'importar'){ $('#archivo').click(); return; }
+    if(acc === 'borrar-todo'){
+      if(el.getAttribute('data-confirmar') === '1'){
+        estado = { items:[], notas:[], tareas:[] };
+        guardar();
+        render();
+        el.textContent = 'Borrar todo';
+        el.removeAttribute('data-confirmar');
+        $('#modal-datos').hidden = true;
+        aviso('Todo fue borrado');
+      }else{
+        el.setAttribute('data-confirmar', '1');
+        el.textContent = 'Toca otra vez para confirmar';
+        setTimeout(function(){
+          if(el.getAttribute('data-confirmar') === '1'){
+            el.textContent = 'Borrar todo';
+            el.removeAttribute('data-confirmar');
+          }
+        }, 4000);
+      }
+      return;
+    }
+
+    if(acc === 'toggle-bajos'){
+      filtro.bajos = !filtro.bajos;
+      el.setAttribute('aria-pressed', filtro.bajos ? 'true' : 'false');
+      renderItems();
+      return;
+    }
+
+    if(acc === 'deshacer'){
+      if(papelera){
+        var p = papelera;
+        if(p.tipo === 'item') estado.items.splice(p.idx, 0, p.dato);
+        if(p.tipo === 'nota') estado.notas.splice(p.idx, 0, p.dato);
+        if(p.tipo === 'tarea') estado.tareas.splice(p.idx, 0, p.dato);
+        papelera = null;
+        guardar();
+        render();
+      }
+      $('#aviso').hidden = true;
+      return;
+    }
+  });
+
+  function agregarTarea(){
+    var campo = $('#nueva-tarea');
+    var texto = campo.value.trim();
+    if(!texto) return;
+    estado.tareas.unshift({ id: uid(), texto: texto, hecha: false, creado: Date.now() });
+    campo.value = '';
+    guardar();
+    renderStats();
+    renderTareas();
+  }
+
+  document.addEventListener('input', function(e){
+    var el = e.target;
+    var tipo = el.getAttribute && el.getAttribute('data-input');
+    if(!tipo) return;
+    if(tipo === 'buscar'){ filtro.texto = el.value; renderItems(); return; }
+    if(tipo === 'nota-titulo' || tipo === 'nota-texto'){
+      var id = el.getAttribute('data-id');
+      estado.notas.forEach(function(n){
+        if(n.id !== id) return;
+        if(tipo === 'nota-titulo') n.titulo = el.value; else n.texto = el.value;
+        n.actualizado = Date.now();
+      });
+      guardar();
+      return;
+    }
+  });
+
+  document.addEventListener('change', function(e){
+    var el = e.target;
+    var tipo = el.getAttribute && el.getAttribute('data-input');
+    if(!tipo) return;
+    if(tipo === 'cat'){ filtro.cat = el.value; renderItems(); return; }
+    if(tipo === 'orden'){ filtro.orden = el.value; renderItems(); return; }
+    if(tipo === 'archivo'){
+      var f = el.files && el.files[0];
+      if(!f) return;
+      var lector = new FileReader();
+      lector.onload = function(){
+        try{
+          aplicarImportado(JSON.parse(String(lector.result)));
+          $('#modal-datos').hidden = true;
+          aviso('Copia cargada');
+        }catch(err){
+          aviso('El archivo no tiene el formato esperado');
+        }
+      };
+      lector.readAsText(f);
+      el.value = '';
+      return;
+    }
+  });
+
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Enter'){
+      var t = e.target;
+      if(t && t.getAttribute && t.getAttribute('data-enter') === 'tarea'){ agregarTarea(); return; }
+      if(t && t.closest && t.closest('#modal-item') && t.tagName === 'INPUT'){ guardarItem(); return; }
+    }
+    if(e.key === 'Escape'){
+      if(!$('#modal-item').hidden) cerrarModal();
+      if(!$('#modal-datos').hidden) $('#modal-datos').hidden = true;
+    }
+  });
+
+  var velos = document.querySelectorAll('.velo');
+  for(var v = 0; v < velos.length; v++){
+    velos[v].addEventListener('click', function(e){
+      if(e.target === this) this.hidden = true;
+    });
+  }
+
+  /* ---------- Arranque ---------- */
+  almacen.leer().then(function(d){
+    if(d && typeof d === 'object'){
+      estado.items = Array.isArray(d.items) ? d.items : [];
+      estado.notas = Array.isArray(d.notas) ? d.notas : [];
+      estado.tareas = Array.isArray(d.tareas) ? d.tareas : [];
+    }
+    render();
+  });
+
+  window.__inv = { estado: function(){ return estado; }, render: render, agregarTarea: agregarTarea };
+})();
+</script>
+</body>
+</html>

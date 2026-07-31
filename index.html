@@ -72,6 +72,7 @@
     object-fit: cover;
     display: block;
   }
+  .camera-wrap canvas.preview { object-fit: contain; background: #111; }
   .guide {
     position: absolute;
     inset: 0;
@@ -163,6 +164,7 @@
   }
   .confirm-box.show { display: block; }
   .confirm-box .label { font-size: .78rem; color: var(--muted); margin-bottom: 4px; }
+  .confirm-box .label + .label-gap { margin-top: 10px; }
   .confirm-box input {
     width: 100%;
     padding: 10px 12px;
@@ -172,6 +174,8 @@
     border-radius: 8px;
     text-transform: uppercase;
   }
+  .confirm-box input.cargo { font-size: .95rem; font-weight: 600; margin-bottom: 0; }
+  .confirm-box .field + .field { margin-top: 10px; }
   .confirm-box .hint { font-size: .75rem; color: var(--muted); margin-top: 6px; }
   /* ---- lista ---- */
   .list-header {
@@ -199,7 +203,9 @@
     font-size: .92rem;
   }
   ul.attendance li:last-child { border-bottom: none; }
-  ul.attendance .name { font-weight: 600; }
+  ul.attendance .who { flex: 1; min-width: 0; }
+  ul.attendance .name { font-weight: 600; display: block; }
+  ul.attendance .cargo { color: var(--muted); font-size: .78rem; display: block; }
   ul.attendance .time { color: var(--muted); font-size: .8rem; white-space: nowrap; }
   ul.attendance .remove {
     flex: 0;
@@ -271,13 +277,19 @@
     </div>
 
     <div class="confirm-box" id="confirmBox">
-      <div class="label">Nombre detectado — corrígelo si es necesario:</div>
-      <input type="text" id="nameInput" autocomplete="off">
+      <div class="field">
+        <div class="label">Nombre detectado — corrígelo si es necesario:</div>
+        <input type="text" id="nameInput" autocomplete="off">
+      </div>
+      <div class="field">
+        <div class="label">Cargo detectado:</div>
+        <input type="text" id="cargoInput" class="cargo" autocomplete="off" placeholder="(sin cargo detectado)">
+      </div>
       <div class="btn-row">
         <button id="btnRegister" class="btn-success">✅ Registrar presente</button>
         <button id="btnCancel" class="btn-secondary">Cancelar</button>
       </div>
-      <div class="hint">Verifica que el nombre sea correcto antes de registrar.</div>
+      <div class="hint">Verifica que los datos sean correctos antes de registrar.</div>
     </div>
   </section>
 
@@ -315,6 +327,7 @@
   const progressFill = $('progressFill');
   const confirmBox = $('confirmBox');
   const nameInput = $('nameInput');
+  const cargoInput = $('cargoInput');
   const btnRegister = $('btnRegister');
   const btnCancel = $('btnCancel');
   const attendanceList = $('attendanceList');
@@ -390,14 +403,62 @@
     }
   }
 
-  function showPreview(drawFn) {
-    const ctx = previewCanvas.getContext('2d');
-    drawFn(ctx);
+  function showPreviewMode() {
     video.style.display = 'none';
     guide.style.display = 'none';
     previewCanvas.style.display = 'block';
     btnCapture.style.display = 'none';
     btnRetake.style.display = 'block';
+  }
+
+  /* Recorta del video solo la zona del recuadro guía: así el OCR
+     recibe únicamente el carnet, sin fondo que lo confunda. */
+  function captureCardRegion() {
+    const vw = video.videoWidth, vh = video.videoHeight;
+    const dispW = video.clientWidth, dispH = video.clientHeight;
+    // el video se muestra con object-fit: cover: se ve solo la región central
+    const scale = Math.max(dispW / vw, dispH / vh);
+    // recuadro guía: 85% del ancho del contenedor, proporción 1.586
+    const boxW = dispW * 0.85;
+    const boxH = boxW / 1.586;
+    // pasar de coordenadas de pantalla a píxeles del video (recorte centrado)
+    const sw = Math.min(boxW / scale, vw);
+    const sh = Math.min(boxH / scale, vh);
+    const sx = (vw - sw) / 2, sy = (vh - sh) / 2;
+    previewCanvas.width = Math.round(sw);
+    previewCanvas.height = Math.round(sh);
+    previewCanvas.getContext('2d').drawImage(video, sx, sy, sw, sh, 0, 0, sw, sh);
+  }
+
+  /* ---------- preprocesado para mejorar el OCR ---------- */
+
+  function preprocessForOCR(srcCanvas) {
+    const c = document.createElement('canvas');
+    // aumentar la resolución si la imagen es pequeña ayuda a Tesseract
+    const scale = srcCanvas.width < 1000 ? Math.min(2, 1200 / srcCanvas.width) : 1;
+    c.width = Math.round(srcCanvas.width * scale);
+    c.height = Math.round(srcCanvas.height * scale);
+    const ctx = c.getContext('2d');
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(srcCanvas, 0, 0, c.width, c.height);
+    const img = ctx.getImageData(0, 0, c.width, c.height);
+    const d = img.data;
+    // escala de grises + estiramiento de contraste
+    let min = 255, max = 0;
+    for (let i = 0; i < d.length; i += 4) {
+      const g = d[i] * 0.299 + d[i+1] * 0.587 + d[i+2] * 0.114;
+      d[i] = d[i+1] = d[i+2] = g;
+      if (g < min) min = g;
+      if (g > max) max = g;
+    }
+    const range = Math.max(1, max - min);
+    for (let i = 0; i < d.length; i += 4) {
+      const v = (d[i] - min) * 255 / range;
+      d[i] = d[i+1] = d[i+2] = v;
+    }
+    ctx.putImageData(img, 0, 0);
+    return c;
   }
 
   /* ---------- OCR ---------- */
@@ -435,11 +496,12 @@
     btnRegister.disabled = false;
     try {
       const w = await getWorker();
-      const { data } = await w.recognize(canvas);
-      const name = extractName(data);
+      const { data } = await w.recognize(preprocessForOCR(canvas));
+      const person = extractPersonData(data);
       hideStatuses();
-      if (name) {
-        nameInput.value = name;
+      if (person) {
+        nameInput.value = person.name;
+        cargoInput.value = person.cargo;
         confirmBox.classList.add('show');
         nameInput.focus();
       } else {
@@ -452,57 +514,93 @@
     }
   }
 
-  /* ---------- extracción del nombre ----------
-     Solo nos interesa el nombre: se ignora número de documento,
-     fechas, cargo y cualquier otro dato del carnet. */
+  /* ---------- extracción de nombre y cargo ----------
+     Formato del carnet de la empresa:
+       [ foto ]
+       NOMBRE APELLIDO      <- sin etiqueta, debajo de la foto
+       CARGO                <- justo debajo del nombre
+     Se usa la posición vertical de cada línea (bbox) para encontrar el
+     nombre y tomar la línea inmediatamente inferior como cargo. */
 
-  const LABEL_RE = /(NOMBRES?|APELLIDOS?\s*Y\s*NOMBRES?|NOMBRE\s*COMPLETO|APELLIDOS?)\s*[:.\-]?\s*(.*)/i;
-  const STOPWORDS = /\b(REPUBLICA|IDENTIDAD|IDENTIFICACION|DOCUMENTO|NACIONAL|CEDULA|CARNET|CARNE|TARJETA|EMPRESA|EMPLEADO|CARGO|FECHA|NACIMIENTO|EXPEDICION|VENCIMIENTO|SANGRE|DIRECCION|TELEFONO|FIRMA|SEXO|ESTATURA|GEREN|DEPARTAMENTO|CODIGO|No\.?|NUM|RH)\b/i;
+  // Palabras propias del documento que nunca son parte del nombre ni del cargo
+  const DOC_WORDS = /\b(REPUBLICA|IDENTIDAD|IDENTIFICACION|DOCUMENTO|NACIONAL|CEDULA|CARNET|CARNE|TARJETA|EMPLEADO|FECHA|NACIMIENTO|EXPEDICION|VENCIMIENTO|VIGENCIA|SANGRE|DIRECCION|TELEFONO|CELULAR|FIRMA|SEXO|ESTATURA|CODIGO|NIT|CC|RH|WWW|HTTP)\b/i;
+  // Sufijos de razón social: si aparecen, la línea es el nombre de la empresa
+  const COMPANY_WORDS = /\b(S\.?\s?A\.?\s?S?|LTDA|CIA|COMPAÑIA|INC|CORP|SRL|EIRL|GRUPO|COMERCIALIZADORA|DISTRIBUIDORA|INDUSTRIAS?|SOLUCIONES)\b/i;
+  // Palabras típicas de cargos: descartan la línea como nombre y la
+  // priorizan como cargo
+  const CARGO_WORDS = /\b(GERENTE|SUBGERENTE|DIRECTORA?|PRESIDENTE|JEFE|JEFA|SUPERVISORA?|COORDINADORA?|LIDER|ANALISTA|ASISTENTE|AUXILIAR|OPERARIA?O?|OPERADORA?|TECNICA?O?|INGENIERA?O?|ARQUITECTA?O?|CONTADORA?|ADMINISTRADORA?|ABOGADA?O?|MEDICA?O?|ENFERMERA?O?|SECRETARIA?O?|RECEPCIONISTA|VENDEDORA?|CAJERA?O?|CONDUCTORA?|MENSAJERA?O?|VIGILANTE|GUARDA|SEGURIDAD|MANTENIMIENTO|SERVICIOS|GENERALES|PRACTICANTE|APRENDIZ|PASANTE|DISEÑADORA?|DESARROLLADORA?|PROGRAMADORA?|CONSULTORA?|ASESORA?|EJECUTIVA?O?|TALENTO|HUMANO|RECURSOS|HUMANOS|LOGISTICA|BODEGA|ALMACEN|PRODUCCION|CALIDAD|VENTAS|COMPRAS|SISTEMAS|CONTABILIDAD|TESORERIA|NOMINA|MERCADEO|MARKETING|COMERCIAL|OPERACIONES|PLANTA|OBRA|SOPORTE)\b/i;
 
   function cleanLine(line) {
     // deja solo letras (incluye acentos y Ñ), espacios, apóstrofes y guiones
     return line.replace(/[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ'\- ]/g, ' ').replace(/\s+/g, ' ').trim();
   }
 
-  function looksLikeName(line) {
-    const c = cleanLine(line);
+  function isNameLine(text) {
+    const c = cleanLine(text);
     if (!c) return false;
+    if (/\d/.test(text)) return false;               // números => no es el nombre
     const words = c.split(' ').filter(w => w.length >= 2);
     if (words.length < 2 || words.length > 6) return false;
-    if (STOPWORDS.test(c)) return false;
-    // los nombres en carnets suelen venir en mayúsculas
-    const upperRatio = (c.replace(/[^A-ZÁÉÍÓÚÜÑ]/g, '').length) / (c.replace(/[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ]/g, '').length || 1);
-    return upperRatio > 0.7;
+    if (DOC_WORDS.test(c) || COMPANY_WORDS.test(text) || CARGO_WORDS.test(c)) return false;
+    return true;
   }
 
-  function extractName(data) {
-    const lines = (data.lines || []).map(l => l.text.trim()).filter(Boolean);
+  function isCargoLine(text) {
+    const c = cleanLine(text);
+    if (!c) return false;
+    const words = c.split(' ').filter(w => w.length >= 2);
+    if (!words.length || words.length > 5) return false;
+    if (DOC_WORDS.test(c) || COMPANY_WORDS.test(text)) return false;
+    return true;
+  }
 
-    // 1) Buscar etiquetas tipo "NOMBRES:" / "APELLIDOS:" — el valor puede
-    //    estar en la misma línea o en la siguiente.
-    const parts = [];
-    for (let i = 0; i < lines.length; i++) {
-      const m = lines[i].match(LABEL_RE);
-      if (m) {
-        let value = cleanLine(m[2] || '');
-        if (!value && lines[i + 1] && looksLikeName(lines[i + 1])) {
-          value = cleanLine(lines[i + 1]);
-          i++;
+  function extractPersonData(data) {
+    const lines = (data.lines || [])
+      .map(l => ({ text: l.text.trim(), conf: l.confidence || 0, bbox: l.bbox }))
+      .filter(l => l.text);
+    if (!lines.length) return null;
+    lines.sort((a, b) => a.bbox.y0 - b.bbox.y0);
+    const imgH = Math.max(...lines.map(l => l.bbox.y1));
+
+    // Elegir la mejor línea-candidata a nombre
+    let best = null, bestScore = -Infinity;
+    lines.forEach((l, i) => {
+      if (!isNameLine(l.text)) return;
+      let score = l.conf;
+      const words = cleanLine(l.text).split(' ').length;
+      if (words >= 2 && words <= 4) score += 15;
+      // el nombre va debajo de la foto: zona media/baja del carnet,
+      // nunca el encabezado
+      const rel = l.bbox.y0 / imgH;
+      if (rel < 0.15) score -= 25;
+      if (rel > 0.3 && rel < 0.9) score += 10;
+      // señal fuerte: la línea siguiente cercana parece un cargo
+      const next = lines[i + 1];
+      if (next) {
+        const gap = next.bbox.y0 - l.bbox.y1;
+        const lineH = Math.max(8, l.bbox.y1 - l.bbox.y0);
+        if (gap < lineH * 2.5 && isCargoLine(next.text)) {
+          score += CARGO_WORDS.test(next.text) ? 35 : 15;
         }
-        if (value && !STOPWORDS.test(value)) parts.push(value);
       }
-    }
-    if (parts.length) return normalizeName(parts.join(' ')).slice(0, 60);
+      if (score > bestScore) { bestScore = score; best = { line: l, idx: i }; }
+    });
+    if (!best) return null;
 
-    // 2) Sin etiquetas: tomar las líneas que parecen un nombre y elegir
-    //    la de mayor confianza/longitud razonable.
-    const candidates = lines.filter(looksLikeName).map(cleanLine);
-    if (candidates.length) {
-      candidates.sort((a, b) => b.length - a.length);
-      // si hay dos candidatas contiguas (apellidos + nombres) únelas
-      return normalizeName(candidates.slice(0, 2).join(' ')).slice(0, 60);
+    const name = normalizeName(cleanLine(best.line.text)).slice(0, 60);
+
+    // El cargo es la línea inmediatamente inferior al nombre
+    let cargo = '';
+    const lineH = Math.max(8, best.line.bbox.y1 - best.line.bbox.y0);
+    for (let j = best.idx + 1; j < lines.length; j++) {
+      const l = lines[j];
+      const gap = l.bbox.y0 - best.line.bbox.y1;
+      if (gap > lineH * 3) break; // demasiado lejos: ya no es el cargo
+      if (!isCargoLine(l.text)) continue;
+      cargo = normalizeName(cleanLine(l.text)).slice(0, 60);
+      break;
     }
-    return null;
+    return { name, cargo };
   }
 
   /* ---------- registro ---------- */
@@ -514,9 +612,18 @@
     emptyMsg.style.display = records.length ? 'none' : 'block';
     records.slice().reverse().forEach(r => {
       const li = document.createElement('li');
+      const who = document.createElement('div');
+      who.className = 'who';
       const name = document.createElement('span');
       name.className = 'name';
       name.textContent = r.name;
+      who.appendChild(name);
+      if (r.cargo) {
+        const cargo = document.createElement('span');
+        cargo.className = 'cargo';
+        cargo.textContent = r.cargo;
+        who.appendChild(cargo);
+      }
       const time = document.createElement('span');
       time.className = 'time';
       time.textContent = r.time;
@@ -525,13 +632,14 @@
       btn.textContent = '✕';
       btn.title = 'Eliminar registro';
       btn.onclick = () => removeRecord(r.id);
-      li.append(name, time, btn);
+      li.append(who, time, btn);
       attendanceList.appendChild(li);
     });
   }
 
   function registerPresent() {
     const name = normalizeName(nameInput.value);
+    const cargo = normalizeName(cargoInput.value);
     if (name.length < 3) {
       showToast('Escribe un nombre válido.', 'warn');
       return;
@@ -547,6 +655,7 @@
     records.push({
       id: Date.now(),
       name,
+      cargo,
       date: todayKey(),
       time: now.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })
     });
@@ -564,6 +673,7 @@
   function resetToCamera() {
     hideStatuses();
     nameInput.value = '';
+    cargoInput.value = '';
     startCamera();
   }
 
@@ -575,8 +685,8 @@
       showToast('No hay registros para exportar.', 'warn');
       return;
     }
-    const rows = [['Nombre', 'Fecha', 'Hora']]
-      .concat(records.map(r => [r.name, r.date, r.time]));
+    const rows = [['Nombre', 'Cargo', 'Fecha', 'Hora']]
+      .concat(records.map(r => [r.name, r.cargo || '', r.date, r.time]));
     const csv = rows.map(row =>
       row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')
     ).join('\r\n');
@@ -592,9 +702,8 @@
 
   btnCapture.addEventListener('click', () => {
     if (!stream) return;
-    previewCanvas.width = video.videoWidth;
-    previewCanvas.height = video.videoHeight;
-    showPreview(ctx => ctx.drawImage(video, 0, 0));
+    captureCardRegion();
+    showPreviewMode();
     stopCamera();
     runOCR(previewCanvas);
   });
@@ -610,7 +719,8 @@
     img.onload = () => {
       previewCanvas.width = img.naturalWidth;
       previewCanvas.height = img.naturalHeight;
-      showPreview(ctx => ctx.drawImage(img, 0, 0));
+      previewCanvas.getContext('2d').drawImage(img, 0, 0);
+      showPreviewMode();
       stopCamera();
       runOCR(previewCanvas);
       URL.revokeObjectURL(img.src);
@@ -622,6 +732,7 @@
   btnRegister.addEventListener('click', registerPresent);
   btnCancel.addEventListener('click', resetToCamera);
   nameInput.addEventListener('keydown', e => { if (e.key === 'Enter') registerPresent(); });
+  cargoInput.addEventListener('keydown', e => { if (e.key === 'Enter') registerPresent(); });
 
   btnExport.addEventListener('click', exportCSV);
   btnClear.addEventListener('click', () => {

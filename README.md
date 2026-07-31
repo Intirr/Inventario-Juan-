@@ -1,6 +1,8 @@
-# Aplicación de Inventario
+# Inventario GENIALab
 
-Aplicación web para llevar el control de un inventario de forma sencilla, rápida y sin necesidad de servidor: todo funciona en el navegador y los datos se guardan en el propio dispositivo.
+<img src="logo.png" alt="Logo GENIALab" width="96" align="right">
+
+Aplicación web de GENIALab para llevar el control de un inventario de forma sencilla, rápida y sin necesidad de servidor: todo funciona en el navegador y los datos se guardan en el propio dispositivo.
 
 ## Funciones
 

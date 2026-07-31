@@ -3,10 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Aplicación de Inventario</title>
-<meta name="description" content="Aplicación de inventario: controla artículos, cantidades, notas y checklist de reposición. Todo se guarda en tu dispositivo.">
+<title>Inventario GENIALab</title>
+<meta name="description" content="Inventario GENIALab: controla artículos, cantidades, notas y checklist de reposición. Todo se guarda en tu dispositivo.">
 <meta name="theme-color" content="#FFC800">
-<meta property="og:title" content="Aplicación de Inventario">
+<meta property="og:title" content="Inventario GENIALab">
+<meta property="og:image" content="logo.png">
 <meta property="og:description" content="Controla artículos, cantidades, notas y checklist de reposición desde cualquier dispositivo.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%22-6%20-8%20132%20162%22%3E%20%3C%21--%20mecha%20--%3E%20%3Cpath%20d=%22M64%2020C68%202%2080-8%2099-8c-9%207-12%2016-8%2025-8-6-19-4-27%206z%22%20fill=%22%23FFD400%22/%3E%20%3C%21--%20bombillo%20--%3E%20%3Cpath%20d=%22M60%2012c24%200%2044%2019%2044%2043%200%2016-8%2027-14%2035-2%203-2%206-2%209H32c0-3%200-6-2-9-6-8-14-19-14-35%200-24%2020-43%2044-43z%22%20fill=%22%23FFD400%22/%3E%20%3C%21--%20gafas%20--%3E%20%3Cpath%20d=%22M22%2054%2012%2049M98%2054l10-5%22%20stroke=%22%23241F35%22%20stroke-width=%226%22%20stroke-linecap=%22round%22/%3E%20%3Ccircle%20cx=%2241%22%20cy=%2258%22%20r=%2219%22%20fill=%22%23fff%22%20stroke=%22%23241F35%22%20stroke-width=%226%22/%3E%20%3Ccircle%20cx=%2279%22%20cy=%2258%22%20r=%2219%22%20fill=%22%23fff%22%20stroke=%22%23241F35%22%20stroke-width=%226%22/%3E%20%3Ccircle%20cx=%2244%22%20cy=%2258%22%20r=%227%22%20fill=%22%23241F35%22/%3E%20%3Ccircle%20cx=%2276%22%20cy=%2258%22%20r=%227%22%20fill=%22%23241F35%22/%3E%20%3Ccircle%20cx=%2246.5%22%20cy=%2255%22%20r=%222.4%22%20fill=%22%23fff%22/%3E%20%3Ccircle%20cx=%2278.5%22%20cy=%2255%22%20r=%222.4%22%20fill=%22%23fff%22/%3E%20%3C%21--%20sonrisa%20--%3E%20%3Cpath%20d=%22M48%2085q12%2011%2024%200%22%20fill=%22none%22%20stroke=%22%23241F35%22%20stroke-width=%225%22%20stroke-linecap=%22round%22/%3E%20%3C%21--%20casquillo%20--%3E%20%3Crect%20x=%2230%22%20y=%2299%22%20width=%2260%22%20height=%2213%22%20rx=%226%22%20fill=%22%234B41C9%22/%3E%20%3Cpath%20d=%22M36%20114h48l-5%2020c-1%207-7%2011-19%2011s-18-4-19-11z%22%20fill=%22%233C3B44%22/%3E%20%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -48,7 +49,7 @@ button{cursor:pointer}
 .cabecera{position:sticky;top:0;z-index:30;background:var(--bl);border-bottom:var(--borde);padding:12px 0 10px;box-shadow:0 3px 0 rgba(14,44,107,.06)}
 .cab-fila{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .marca{display:flex;align-items:center;gap:11px;min-width:0}
-.logo{width:40px;height:auto;flex:0 0 auto}
+.logo{width:44px;height:44px;flex:0 0 auto;border-radius:50%;border:2px solid var(--az);background:var(--bl);object-fit:cover}
 .cab-fila h1{font-size:22px;line-height:1.1;display:inline-block;padding:0 4px;background:linear-gradient(transparent 58%,var(--am) 58%)}
 .cab-fila .sub{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;opacity:.75;display:block;margin-top:3px}
 .stats{display:flex;gap:8px;overflow-x:auto;padding:10px 0 2px;scrollbar-width:none}
@@ -188,7 +189,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.5}
 @media (min-width:700px){
   .rejilla{grid-template-columns:1fr 1fr}
   .cab-fila h1{font-size:28px}
-  .logo{width:50px}
+  .logo{width:54px;height:54px}
   .velo{align-items:center;padding:20px}
   .hoja{border-radius:18px;border:var(--borde);box-shadow:var(--sombra)}
 }
@@ -201,27 +202,9 @@ textarea{resize:vertical;min-height:80px;line-height:1.5}
   <div class="envoltura">
     <div class="cab-fila">
       <div class="marca">
-        <svg class="logo" role="img" aria-label="Logo de la aplicación" xmlns="http://www.w3.org/2000/svg" viewBox="-6 -8 132 162">
-        <!-- mecha -->
-        <path d="M64 20C68 2 80-8 99-8c-9 7-12 16-8 25-8-6-19-4-27 6z" fill="#FFD400"/>
-        <!-- bombillo -->
-        <path d="M60 12c24 0 44 19 44 43 0 16-8 27-14 35-2 3-2 6-2 9H32c0-3 0-6-2-9-6-8-14-19-14-35 0-24 20-43 44-43z" fill="#FFD400"/>
-        <!-- gafas -->
-        <path d="M22 54 12 49M98 54l10-5" stroke="#241F35" stroke-width="6" stroke-linecap="round"/>
-        <circle cx="41" cy="58" r="19" fill="#fff" stroke="#241F35" stroke-width="6"/>
-        <circle cx="79" cy="58" r="19" fill="#fff" stroke="#241F35" stroke-width="6"/>
-        <circle cx="44" cy="58" r="7" fill="#241F35"/>
-        <circle cx="76" cy="58" r="7" fill="#241F35"/>
-        <circle cx="46.5" cy="55" r="2.4" fill="#fff"/>
-        <circle cx="78.5" cy="55" r="2.4" fill="#fff"/>
-        <!-- sonrisa -->
-        <path d="M48 85q12 11 24 0" fill="none" stroke="#241F35" stroke-width="5" stroke-linecap="round"/>
-        <!-- casquillo -->
-        <rect x="30" y="99" width="60" height="13" rx="6" fill="#4B41C9"/>
-        <path d="M36 114h48l-5 20c-1 7-7 11-19 11s-18-4-19-11z" fill="#3C3B44"/>
-        </svg>
+        <img class="logo" src="logo.png" alt="Logo GENIALab" width="44" height="44">
         <div>
-          <h1>Aplicación de Inventario</h1>
+          <h1>Inventario GENIALab</h1>
           <span class="sub">Artículos · Notas · Checklist</span>
         </div>
       </div>
@@ -280,7 +263,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.5}
   </main>
 
   <footer class="pie">
-    <p>Aplicación de Inventario</p>
+    <p>Inventario GENIALab</p>
     <p>Tus datos se guardan solo en este dispositivo</p>
   </footer>
 </div>

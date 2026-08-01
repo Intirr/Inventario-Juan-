@@ -77,7 +77,7 @@ input,select,textarea{
 select{background-image:linear-gradient(45deg,transparent 50%,var(--az) 50%),linear-gradient(135deg,var(--az) 50%,transparent 50%);background-position:calc(100% - 17px) 20px,calc(100% - 12px) 20px;background-size:5px 5px,5px 5px;background-repeat:no-repeat;padding-right:34px}
 .barra select{flex:1 1 40%;width:auto}
 textarea{resize:vertical;min-height:80px;line-height:1.5}
-.interruptor{flex:1 1 100%;background:var(--bl);border:var(--borde);border-radius:11px;padding:10px;font-weight:600;font-size:14px;box-shadow:var(--sombra-mini);transition:transform .12s,box-shadow .12s,background .12s}
+.interruptor{flex:1 1 45%;background:var(--bl);border:var(--borde);border-radius:11px;padding:10px;font-weight:600;font-size:14px;box-shadow:var(--sombra-mini);transition:transform .12s,box-shadow .12s,background .12s}
 .interruptor[aria-pressed="true"]{background:var(--am);color:var(--az);box-shadow:none;transform:translate(2px,2px)}
 
 /* ---------- Tarjetas ---------- */
@@ -167,6 +167,21 @@ textarea{resize:vertical;min-height:80px;line-height:1.5}
 .mov-fila input{flex:0 0 92px;width:92px}
 .mov-fila .quitar{background:none;border:none;font-size:19px;padding:0 2px;line-height:1;opacity:.55;transition:opacity .12s}
 
+/* ---------- Marcas y destacados ---------- */
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{background:var(--bl);border:2px solid var(--az);border-radius:9px;padding:6px 10px;font-family:'Space Mono',monospace;font-size:12px;box-shadow:2px 2px 0 var(--az);transition:transform .12s,box-shadow .12s,background .12s}
+.chip[aria-pressed="true"]{background:var(--az);color:var(--am);box-shadow:none;transform:translate(1px,1px)}
+.sello.top{background:var(--az);color:var(--am);border-color:var(--az)}
+.sello.lento{background:var(--bl);color:var(--az)}
+.etq.marca{background:var(--az);color:var(--am);border-color:var(--az)}
+.etq.venta{background:var(--bl)}
+
+/* ---------- Historial ---------- */
+.hist{background:var(--bl);border:var(--borde);border-radius:12px;padding:11px 13px;box-shadow:var(--sombra-mini)}
+.hist-cab{display:flex;justify-content:space-between;align-items:center;gap:8px;font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase;opacity:.8}
+.hist ul{margin:8px 0 0;padding:0 0 0 18px;font-size:14px}
+.hist li{margin:2px 0}
+
 /* ---------- Modal ---------- */
 .velo{position:fixed;inset:0;background:rgba(14,44,107,.5);z-index:60;display:flex;align-items:flex-end;justify-content:center;padding:0;backdrop-filter:blur(2px)}
 .velo[hidden]{display:none}
@@ -227,6 +242,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.5}
     <button class="tab activa" data-action="tab" data-tab="inventario" role="tab" aria-selected="true">Artículos</button>
     <button class="tab" data-action="tab" data-tab="notas" role="tab" aria-selected="false">Notas</button>
     <button class="tab" data-action="tab" data-tab="checklist" role="tab" aria-selected="false">Checklist</button>
+    <button class="tab" data-action="tab" data-tab="historial" role="tab" aria-selected="false">Historial</button>
   </nav>
 
   <main>
@@ -241,8 +257,10 @@ textarea{resize:vertical;min-height:80px;line-height:1.5}
           <option value="az">Nombre A–Z</option>
           <option value="menos">Menor cantidad</option>
           <option value="mas">Mayor cantidad</option>
+          <option value="vendidos">Más vendidos</option>
         </select>
-        <button class="interruptor" data-action="toggle-bajos" aria-pressed="false">Ver solo bajo mínimo</button>
+        <button class="interruptor" data-action="toggle-bajos" aria-pressed="false">Solo bajo mínimo</button>
+        <button class="interruptor" data-action="toggle-dest" aria-pressed="false">★ Solo destacados</button>
       </div>
       <div class="rejilla" id="lista-items"></div>
     </section>
@@ -268,6 +286,12 @@ textarea{resize:vertical;min-height:80px;line-height:1.5}
         <button class="btn mini claro" data-action="limpiar-hechas">Quitar completadas</button>
       </div>
       <div class="rejilla" id="lista-tareas"></div>
+    </section>
+
+    <!-- HISTORIAL -->
+    <section id="v-historial" class="oculto">
+      <button class="btn mini claro" data-action="vaciar-hist" style="margin-bottom:12px">Vaciar historial</button>
+      <div class="rejilla" id="lista-hist"></div>
     </section>
   </main>
 
@@ -316,6 +340,15 @@ textarea{resize:vertical;min-height:80px;line-height:1.5}
     <div class="campo">
       <label for="c-lugar">Lugar</label>
       <input type="text" id="c-lugar" placeholder="Ej: Estante 2">
+    </div>
+    <div class="campo">
+      <label>Marcas rápidas</label>
+      <div class="chips">
+        <button type="button" class="chip" data-action="chip-marca" data-marca="Promoción" aria-pressed="false">Promoción</button>
+        <button type="button" class="chip" data-action="chip-marca" data-marca="Vence pronto" aria-pressed="false">Vence pronto</button>
+        <button type="button" class="chip" data-action="chip-marca" data-marca="Pedido" aria-pressed="false">Pedido</button>
+        <button type="button" class="chip" data-action="chip-marca" data-marca="Dañado" aria-pressed="false">Dañado</button>
+      </div>
     </div>
     <div class="campo">
       <label for="c-nota">Nota</label>
@@ -370,10 +403,11 @@ textarea{resize:vertical;min-height:80px;line-height:1.5}
   'use strict';
 
   var CLAVE = 'inventario-app-v1';
-  var estado = { items: [], notas: [], tareas: [] };
+  var estado = { items: [], notas: [], tareas: [], historial: [] };
   var vista = 'inventario';
-  var filtro = { texto:'', cat:'', orden:'recientes', bajos:false };
+  var filtro = { texto:'', cat:'', orden:'recientes', bajos:false, dest:false };
   var editandoItem = null;
+  var marcasSel = [];
   var mov = null;
   var papelera = null;
   var avisoTimer = null, guardarTimer = null;
@@ -393,6 +427,12 @@ textarea{resize:vertical;min-height:80px;line-height:1.5}
     var d = new Date(t);
     if(isNaN(d.getTime())) return '';
     return d.toLocaleDateString('es-CO', { day:'2-digit', month:'short' });
+  }
+  function fechaHora(t){
+    if(!t) return '';
+    var d = new Date(t);
+    if(isNaN(d.getTime())) return '';
+    return d.toLocaleDateString('es-CO', { day:'2-digit', month:'short' }) + ' · ' + d.toLocaleTimeString('es-CO', { hour:'2-digit', minute:'2-digit' });
   }
 
   /* ---------- Guardado ---------- */
@@ -440,14 +480,16 @@ textarea{resize:vertical;min-height:80px;line-height:1.5}
     var lista = estado.items.filter(function(it){
       if(filtro.cat && (it.categoria || '') !== filtro.cat) return false;
       if(filtro.bajos && !esBajo(it)) return false;
+      if(filtro.dest && !it.destacado) return false;
       if(!t) return true;
-      return ((it.nombre||'') + ' ' + (it.categoria||'') + ' ' + (it.lugar||'') + ' ' + (it.nota||'')).toLowerCase().indexOf(t) !== -1;
+      return ((it.nombre||'') + ' ' + (it.categoria||'') + ' ' + (it.lugar||'') + ' ' + (it.nota||'') + ' ' + (it.marcas||[]).join(' ')).toLowerCase().indexOf(t) !== -1;
     });
     var o = filtro.orden;
     lista.sort(function(a,b){
       if(o === 'az') return (a.nombre||'').localeCompare(b.nombre||'', 'es');
       if(o === 'menos') return num(a.cantidad) - num(b.cantidad);
       if(o === 'mas') return num(b.cantidad) - num(a.cantidad);
+      if(o === 'vendidos') return num(b.vendido) - num(a.vendido);
       return (b.creado || 0) - (a.creado || 0);
     });
     return lista;
@@ -460,13 +502,34 @@ textarea{resize:vertical;min-height:80px;line-height:1.5}
     renderItems();
     renderNotas();
     renderTareas();
+    renderHistorial();
+  }
+
+  function renderHistorial(){
+    var cont = $('#lista-hist');
+    if(!estado.historial.length){
+      cont.innerHTML = '<div class="vacio"><h3>Sin movimientos</h3><p>Cada venta o entrada que registres quedará anotada aquí con su fecha.</p></div>';
+      return;
+    }
+    cont.innerHTML = estado.historial.map(function(h){
+      return '<article class="hist">' +
+        '<div class="hist-cab">' +
+          '<span class="sello' + (h.tipo === 'entrada' ? ' top' : '') + '" style="margin-top:0;transform:none">' + (h.tipo === 'entrada' ? '+ ENTRADA' : '− SALIDA') + '</span>' +
+          '<span>' + esc(fechaHora(h.fecha)) + '</span>' +
+        '</div>' +
+        '<ul>' + h.lineas.map(function(l){
+          return '<li>' + fmt(l.cant) + ' ' + esc(l.unidad || 'u') + ' — ' + esc(l.nombre) + '</li>';
+        }).join('') + '</ul>' +
+      '</article>';
+    }).join('');
   }
 
   function renderStats(){
-    var unidades = 0, valor = 0, bajos = 0;
+    var unidades = 0, valor = 0, bajos = 0, vendidos = 0;
     estado.items.forEach(function(it){
       unidades += num(it.cantidad);
       valor += num(it.cantidad) * num(it.precio);
+      vendidos += num(it.vendido);
       if(esBajo(it)) bajos++;
     });
     var pend = estado.tareas.filter(function(t){ return !t.hecha; }).length;
@@ -475,6 +538,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.5}
       '<div class="stat"><b>' + fmt(unidades) + '</b><span>Unidades</span></div>' +
       '<div class="stat' + (bajos ? ' alerta' : '') + '"><b>' + bajos + '</b><span>Bajo mínimo</span></div>' +
       '<div class="stat"><b>' + plata(valor) + '</b><span>Valor total</span></div>' +
+      '<div class="stat"><b>' + fmt(vendidos) + '</b><span>Vendidos</span></div>' +
       '<div class="stat"><b>' + pend + '</b><span>Pendientes</span></div>';
   }
 
@@ -488,6 +552,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.5}
     $('#v-inventario').classList.toggle('oculto', vista !== 'inventario');
     $('#v-notas').classList.toggle('oculto', vista !== 'notas');
     $('#v-checklist').classList.toggle('oculto', vista !== 'checklist');
+    $('#v-historial').classList.toggle('oculto', vista !== 'historial');
     $('#fab').classList.toggle('oculto', vista !== 'inventario');
   }
 
@@ -519,19 +584,31 @@ textarea{resize:vertical;min-height:80px;line-height:1.5}
       cont.innerHTML = '<div class="vacio"><h3>Sin resultados</h3><p>Cambia la búsqueda o los filtros para ver más.</p></div>';
       return;
     }
+    var DOS_SEMANAS = 14 * 24 * 60 * 60 * 1000;
+    var topIds = estado.items
+      .filter(function(x){ return num(x.vendido) > 0; })
+      .sort(function(a,b){ return num(b.vendido) - num(a.vendido); })
+      .slice(0, 3)
+      .map(function(x){ return x.id; });
     cont.innerHTML = lista.map(function(it){
       var bajo = esBajo(it);
+      var esTop = topIds.indexOf(it.id) !== -1;
+      var esLento = num(it.vendido) === 0 && it.creado && (Date.now() - it.creado) > DOS_SEMANAS;
       var etiquetas = '';
       if(it.categoria) etiquetas += '<span class="etq">' + esc(it.categoria) + '</span>';
       if(num(it.minimo) > 0) etiquetas += '<span class="etq">mín ' + fmt(it.minimo) + '</span>';
       if(num(it.precio) > 0) etiquetas += '<span class="etq">' + plata(it.precio) + ' c/u</span>';
       if(num(it.precio) > 0) etiquetas += '<span class="etq">= ' + plata(num(it.precio) * num(it.cantidad)) + '</span>';
+      if(num(it.vendido) > 0) etiquetas += '<span class="etq venta">' + fmt(it.vendido) + (num(it.vendido) === 1 ? ' vendido' : ' vendidos') + '</span>';
+      (it.marcas || []).forEach(function(m){ etiquetas += '<span class="etq marca">' + esc(m) + '</span>'; });
       return '<article class="ficha' + (bajo ? ' baja' : '') + '">' +
         '<div class="ficha-top">' +
           '<div>' +
-            '<h3>' + esc(it.nombre) + '</h3>' +
+            '<h3>' + (it.destacado ? '★ ' : '') + esc(it.nombre) + '</h3>' +
             (it.lugar ? '<span class="ubic">' + esc(it.lugar) + '</span>' : '') +
-            (bajo ? '<span class="sello">BAJO MÍNIMO</span>' : '') +
+            (bajo ? '<span class="sello">BAJO MÍNIMO</span> ' : '') +
+            (esTop ? '<span class="sello top">TOP VENTAS</span> ' : '') +
+            (esLento ? '<span class="sello lento">POCA ROTACIÓN</span>' : '') +
           '</div>' +
           '<div class="dial">' +
             '<button data-action="restar" data-id="' + it.id + '" aria-label="Restar uno">−</button>' +
@@ -542,6 +619,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.5}
         (etiquetas ? '<div class="etiquetas">' + etiquetas + '</div>' : '') +
         (it.nota ? '<p class="nota">' + esc(it.nota) + '</p>' : '') +
         '<div class="acciones">' +
+          '<button class="btn mini claro" data-action="destacar" data-id="' + it.id + '" aria-pressed="' + (it.destacado ? 'true' : 'false') + '">' + (it.destacado ? '★ Quitar' : '☆ Destacar') + '</button>' +
           '<button class="btn mini claro" data-action="editar-item" data-id="' + it.id + '">Editar</button>' +
           '<button class="btn mini claro" data-action="a-checklist" data-id="' + it.id + '">A la checklist</button>' +
           '<button class="btn mini claro" data-action="borrar-item" data-id="' + it.id + '">Borrar</button>' +
@@ -600,10 +678,19 @@ textarea{resize:vertical;min-height:80px;line-height:1.5}
     $('#c-categoria').value = item ? (item.categoria || '') : '';
     $('#c-lugar').value = item ? (item.lugar || '') : '';
     $('#c-nota').value = item ? (item.nota || '') : '';
+    marcasSel = item && item.marcas ? item.marcas.slice() : [];
+    pintarChips();
     $('#modal-item').hidden = false;
     setTimeout(function(){ try{ $('#c-nombre').focus(); }catch(e){} }, 30);
   }
   function cerrarModal(){ $('#modal-item').hidden = true; editandoItem = null; }
+
+  function pintarChips(){
+    var chips = document.querySelectorAll('[data-action="chip-marca"]');
+    for(var i = 0; i < chips.length; i++){
+      chips[i].setAttribute('aria-pressed', marcasSel.indexOf(chips[i].getAttribute('data-marca')) !== -1 ? 'true' : 'false');
+    }
+  }
 
   function guardarItem(){
     var nombre = $('#c-nombre').value.trim();
@@ -622,7 +709,8 @@ textarea{resize:vertical;min-height:80px;line-height:1.5}
       precio: num($('#c-precio').value),
       categoria: $('#c-categoria').value.trim(),
       lugar: $('#c-lugar').value.trim(),
-      nota: $('#c-nota').value.trim()
+      nota: $('#c-nota').value.trim(),
+      marcas: marcasSel.slice()
     };
     if(editandoItem){
       for(var k in datos){ editandoItem[k] = datos[k]; }
@@ -632,6 +720,8 @@ textarea{resize:vertical;min-height:80px;line-height:1.5}
       datos.id = uid();
       datos.creado = Date.now();
       datos.actualizado = Date.now();
+      datos.vendido = 0;
+      datos.destacado = false;
       estado.items.push(datos);
       aviso('Artículo guardado');
     }
@@ -700,15 +790,20 @@ textarea{resize:vertical;min-height:80px;line-height:1.5}
         return;
       }
     }
-    var previos = [];
+    var previos = [], lineas = [];
     ids.forEach(function(id){
       var it = buscarItem(id);
       if(!it) return;
-      previos.push({ id: id, cantidad: it.cantidad });
+      previos.push({ id: id, cantidad: it.cantidad, vendido: it.vendido });
       it.cantidad = tipo === 'salida' ? num(it.cantidad) - porId[id] : num(it.cantidad) + porId[id];
+      if(tipo === 'salida') it.vendido = num(it.vendido) + porId[id];
       it.actualizado = Date.now();
+      lineas.push({ nombre: it.nombre, cant: porId[id], unidad: it.unidad || 'u' });
     });
-    papelera = { tipo:'mov', previos: previos };
+    var registro = { id: uid(), fecha: Date.now(), tipo: tipo, lineas: lineas };
+    estado.historial.unshift(registro);
+    if(estado.historial.length > 300) estado.historial.length = 300;
+    papelera = { tipo:'mov', previos: previos, histId: registro.id };
     cerrarMov();
     guardar();
     render();
@@ -743,7 +838,8 @@ textarea{resize:vertical;min-height:80px;line-height:1.5}
     estado = {
       items: Array.isArray(obj.items) ? obj.items : [],
       notas: Array.isArray(obj.notas) ? obj.notas : [],
-      tareas: Array.isArray(obj.tareas) ? obj.tareas : []
+      tareas: Array.isArray(obj.tareas) ? obj.tareas : [],
+      historial: Array.isArray(obj.historial) ? obj.historial : []
     };
     estado.items.forEach(function(it){ if(!it.id) it.id = uid(); if(!it.creado) it.creado = Date.now(); });
     estado.notas.forEach(function(n){ if(!n.id) n.id = uid(); });
@@ -793,8 +889,10 @@ textarea{resize:vertical;min-height:80px;line-height:1.5}
     if(acc === 'sumar' || acc === 'restar'){
       it = buscarItem(id);
       if(!it) return;
-      var nuevo = num(it.cantidad) + (acc === 'sumar' ? 1 : -1);
+      var antes = num(it.cantidad);
+      var nuevo = antes + (acc === 'sumar' ? 1 : -1);
       it.cantidad = nuevo < 0 ? 0 : nuevo;
+      if(acc === 'restar' && antes > 0) it.vendido = num(it.vendido) + 1;
       it.actualizado = Date.now();
       guardar();
       renderStats();
@@ -905,7 +1003,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.5}
     if(acc === 'importar'){ $('#archivo').click(); return; }
     if(acc === 'borrar-todo'){
       if(el.getAttribute('data-confirmar') === '1'){
-        estado = { items:[], notas:[], tareas:[] };
+        estado = { items:[], notas:[], tareas:[], historial:[] };
         guardar();
         render();
         el.textContent = 'Borrar todo';
@@ -931,6 +1029,49 @@ textarea{resize:vertical;min-height:80px;line-height:1.5}
       renderItems();
       return;
     }
+    if(acc === 'toggle-dest'){
+      filtro.dest = !filtro.dest;
+      el.setAttribute('aria-pressed', filtro.dest ? 'true' : 'false');
+      renderItems();
+      return;
+    }
+    if(acc === 'destacar'){
+      it = buscarItem(id);
+      if(!it) return;
+      it.destacado = !it.destacado;
+      it.actualizado = Date.now();
+      guardar();
+      renderItems();
+      return;
+    }
+    if(acc === 'chip-marca'){
+      var m = el.getAttribute('data-marca');
+      idx = marcasSel.indexOf(m);
+      if(idx === -1) marcasSel.push(m); else marcasSel.splice(idx, 1);
+      pintarChips();
+      return;
+    }
+    if(acc === 'vaciar-hist'){
+      if(!estado.historial.length){ aviso('El historial ya está vacío'); return; }
+      if(el.getAttribute('data-confirmar') === '1'){
+        estado.historial = [];
+        el.textContent = 'Vaciar historial';
+        el.removeAttribute('data-confirmar');
+        guardar();
+        renderHistorial();
+        aviso('Historial vaciado');
+      }else{
+        el.setAttribute('data-confirmar', '1');
+        el.textContent = 'Toca otra vez para confirmar';
+        setTimeout(function(){
+          if(el.getAttribute('data-confirmar') === '1'){
+            el.textContent = 'Vaciar historial';
+            el.removeAttribute('data-confirmar');
+          }
+        }, 4000);
+      }
+      return;
+    }
 
     if(acc === 'deshacer'){
       if(papelera){
@@ -941,8 +1082,9 @@ textarea{resize:vertical;min-height:80px;line-height:1.5}
         if(p.tipo === 'mov'){
           p.previos.forEach(function(pr){
             var it = buscarItem(pr.id);
-            if(it){ it.cantidad = pr.cantidad; it.actualizado = Date.now(); }
+            if(it){ it.cantidad = pr.cantidad; it.vendido = pr.vendido; it.actualizado = Date.now(); }
           });
+          estado.historial = estado.historial.filter(function(h){ return h.id !== p.histId; });
         }
         papelera = null;
         guardar();
@@ -1034,6 +1176,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.5}
       estado.items = Array.isArray(d.items) ? d.items : [];
       estado.notas = Array.isArray(d.notas) ? d.notas : [];
       estado.tareas = Array.isArray(d.tareas) ? d.tareas : [];
+      estado.historial = Array.isArray(d.historial) ? d.historial : [];
     }
     render();
   });

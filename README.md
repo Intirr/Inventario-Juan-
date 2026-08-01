@@ -11,6 +11,7 @@ Aplicación web de GENIALab para llevar el control de un inventario de forma sen
   - Alerta visual de **bajo mínimo** cuando la cantidad llega al mínimo definido.
   - Búsqueda por nombre, categoría o lugar, filtro por categoría y varios órdenes.
   - Estadísticas en vivo: total de artículos, unidades, valor del inventario y pendientes.
+- **Movimientos**: registra ventas (salidas) o compras (entradas) de varios artículos a la vez — por ejemplo, 10 lapiceros y 5 cuadernos — y las cantidades se actualizan de un solo golpe, con validación de stock y opción de deshacer.
 - **Notas**: espacio libre para proveedores, medidas o recordatorios; se guardan solas mientras escribes.
 - **Checklist**: lista de tareas con barra de progreso. Puedes traer automáticamente los artículos bajo mínimo como tareas de reposición.
 - **Copia de seguridad**: exporta e importa todos los datos en un archivo `.json` desde el botón **Datos**.

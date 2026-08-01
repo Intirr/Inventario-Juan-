@@ -159,6 +159,14 @@ textarea{resize:vertical;min-height:80px;line-height:1.5}
 .fila-agregar{display:flex;gap:8px;margin-bottom:12px}
 .fila-agregar input{flex:1}
 
+/* ---------- Movimiento ---------- */
+.tipo-mov{display:flex;gap:8px;margin-bottom:11px}
+.tipo-mov .interruptor{flex:1 1 auto}
+.mov-fila{display:flex;gap:8px;margin-bottom:9px;align-items:center}
+.mov-fila select{flex:1;min-width:0}
+.mov-fila input{flex:0 0 92px;width:92px}
+.mov-fila .quitar{background:none;border:none;font-size:19px;padding:0 2px;line-height:1;opacity:.55;transition:opacity .12s}
+
 /* ---------- Modal ---------- */
 .velo{position:fixed;inset:0;background:rgba(14,44,107,.5);z-index:60;display:flex;align-items:flex-end;justify-content:center;padding:0;backdrop-filter:blur(2px)}
 .velo[hidden]{display:none}
@@ -224,6 +232,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.5}
   <main>
     <!-- INVENTARIO -->
     <section id="v-inventario">
+      <button class="btn ancho" data-action="abrir-mov" style="margin-bottom:12px">↑↓ Registrar movimiento (venta o entrada)</button>
       <div class="barra">
         <input type="search" id="buscar" data-input="buscar" placeholder="Buscar por nombre, categoría o lugar" aria-label="Buscar artículos">
         <select id="f-cat" data-input="cat" aria-label="Filtrar por categoría"><option value="">Todas las categorías</option></select>
@@ -319,6 +328,25 @@ textarea{resize:vertical;min-height:80px;line-height:1.5}
   </div>
 </div>
 
+<!-- Modal movimiento -->
+<div class="velo" id="modal-mov" hidden>
+  <div class="hoja" role="dialog" aria-modal="true" aria-labelledby="mov-titulo">
+    <h2 id="mov-titulo">Registrar movimiento</h2>
+    <p style="font-size:14px;margin-top:0">Descuenta o suma cantidades de varios artículos a la vez. Ej.: se vendieron 10 lapiceros y 5 cuadernos.</p>
+    <div class="tipo-mov">
+      <button class="interruptor" data-action="mov-tipo" data-tipo="salida" aria-pressed="true">− Salida (venta)</button>
+      <button class="interruptor" data-action="mov-tipo" data-tipo="entrada" aria-pressed="false">+ Entrada (compra)</button>
+    </div>
+    <div class="error" id="mov-error" hidden></div>
+    <div id="mov-filas"></div>
+    <button class="btn claro ancho" data-action="mov-agregar-fila" style="margin-bottom:10px">+ Añadir otro artículo</button>
+    <div class="hoja-acciones">
+      <button class="btn claro" data-action="cerrar-mov">Cancelar</button>
+      <button class="btn" data-action="aplicar-mov">Aplicar movimiento</button>
+    </div>
+  </div>
+</div>
+
 <!-- Modal datos -->
 <div class="velo" id="modal-datos" hidden>
   <div class="hoja" role="dialog" aria-modal="true" aria-labelledby="datos-titulo">
@@ -346,6 +374,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.5}
   var vista = 'inventario';
   var filtro = { texto:'', cat:'', orden:'recientes', bajos:false };
   var editandoItem = null;
+  var mov = null;
   var papelera = null;
   var avisoTimer = null, guardarTimer = null;
 
@@ -616,6 +645,76 @@ textarea{resize:vertical;min-height:80px;line-height:1.5}
     return null;
   }
 
+  /* ---------- Movimiento (venta / entrada) ---------- */
+  function abrirMov(){
+    if(!estado.items.length){ aviso('Primero registra artículos con el botón +'); return; }
+    mov = { tipo:'salida', filas:[{ id:'', cant:'' }] };
+    $('#mov-error').hidden = true;
+    renderMov();
+    $('#modal-mov').hidden = false;
+  }
+  function cerrarMov(){ $('#modal-mov').hidden = true; mov = null; }
+
+  function renderMov(){
+    if(!mov) return;
+    var bs = document.querySelectorAll('[data-action="mov-tipo"]');
+    for(var i = 0; i < bs.length; i++){
+      bs[i].setAttribute('aria-pressed', bs[i].getAttribute('data-tipo') === mov.tipo ? 'true' : 'false');
+    }
+    var ordenados = estado.items.slice().sort(function(a,b){ return (a.nombre||'').localeCompare(b.nombre||'', 'es'); });
+    $('#mov-filas').innerHTML = mov.filas.map(function(f, i){
+      var ops = '<option value="">Elige un artículo…</option>' + ordenados.map(function(it){
+        return '<option value="' + it.id + '"' + (it.id === f.id ? ' selected' : '') + '>' + esc(it.nombre) + ' (' + fmt(it.cantidad) + ' ' + esc(it.unidad || 'u') + ')</option>';
+      }).join('');
+      return '<div class="mov-fila">' +
+        '<select data-input="mov-item" data-i="' + i + '" aria-label="Artículo">' + ops + '</select>' +
+        '<input type="number" inputmode="decimal" step="any" min="0" placeholder="Cant." value="' + esc(f.cant) + '" data-input="mov-cant" data-i="' + i + '" aria-label="Cantidad">' +
+        '<button class="quitar" data-action="mov-quitar-fila" data-i="' + i + '" aria-label="Quitar fila">×</button>' +
+      '</div>';
+    }).join('');
+  }
+
+  function aplicarMov(){
+    if(!mov) return;
+    var err = $('#mov-error');
+    var tipo = mov.tipo;
+    var porId = {};
+    mov.filas.forEach(function(f){
+      if(f.id && num(f.cant) > 0) porId[f.id] = (porId[f.id] || 0) + num(f.cant);
+    });
+    var ids = Object.keys(porId);
+    if(!ids.length){
+      err.textContent = 'Elige al menos un artículo y escribe su cantidad.';
+      err.hidden = false;
+      return;
+    }
+    if(tipo === 'salida'){
+      var faltan = [];
+      ids.forEach(function(id){
+        var it = buscarItem(id);
+        if(it && porId[id] > num(it.cantidad)) faltan.push(it.nombre + ' (hay ' + fmt(it.cantidad) + ')');
+      });
+      if(faltan.length){
+        err.textContent = 'No hay suficiente cantidad de: ' + faltan.join(', ') + '.';
+        err.hidden = false;
+        return;
+      }
+    }
+    var previos = [];
+    ids.forEach(function(id){
+      var it = buscarItem(id);
+      if(!it) return;
+      previos.push({ id: id, cantidad: it.cantidad });
+      it.cantidad = tipo === 'salida' ? num(it.cantidad) - porId[id] : num(it.cantidad) + porId[id];
+      it.actualizado = Date.now();
+    });
+    papelera = { tipo:'mov', previos: previos };
+    cerrarMov();
+    guardar();
+    render();
+    aviso((tipo === 'salida' ? 'Salida registrada: ' : 'Entrada registrada: ') + previos.length + (previos.length === 1 ? ' artículo actualizado' : ' artículos actualizados'), true);
+  }
+
   /* ---------- Datos ---------- */
   function exportar(){
     var texto = JSON.stringify(estado, null, 2);
@@ -669,6 +768,25 @@ textarea{resize:vertical;min-height:80px;line-height:1.5}
     }
     if(acc === 'nuevo-item'){ abrirModal(null); return; }
     if(acc === 'cerrar-modal'){ cerrarModal(); return; }
+    if(acc === 'abrir-mov'){ abrirMov(); return; }
+    if(acc === 'cerrar-mov'){ cerrarMov(); return; }
+    if(acc === 'aplicar-mov'){ aplicarMov(); return; }
+    if(acc === 'mov-tipo'){
+      if(mov){ mov.tipo = el.getAttribute('data-tipo'); $('#mov-error').hidden = true; renderMov(); }
+      return;
+    }
+    if(acc === 'mov-agregar-fila'){
+      if(mov){ mov.filas.push({ id:'', cant:'' }); renderMov(); }
+      return;
+    }
+    if(acc === 'mov-quitar-fila'){
+      if(mov){
+        mov.filas.splice(+el.getAttribute('data-i'), 1);
+        if(!mov.filas.length) mov.filas.push({ id:'', cant:'' });
+        renderMov();
+      }
+      return;
+    }
     if(acc === 'guardar-item'){ guardarItem(); return; }
     if(acc === 'editar-item'){ it = buscarItem(id); if(it) abrirModal(it); return; }
 
@@ -820,6 +938,12 @@ textarea{resize:vertical;min-height:80px;line-height:1.5}
         if(p.tipo === 'item') estado.items.splice(p.idx, 0, p.dato);
         if(p.tipo === 'nota') estado.notas.splice(p.idx, 0, p.dato);
         if(p.tipo === 'tarea') estado.tareas.splice(p.idx, 0, p.dato);
+        if(p.tipo === 'mov'){
+          p.previos.forEach(function(pr){
+            var it = buscarItem(pr.id);
+            if(it){ it.cantidad = pr.cantidad; it.actualizado = Date.now(); }
+          });
+        }
         papelera = null;
         guardar();
         render();
@@ -845,6 +969,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.5}
     var tipo = el.getAttribute && el.getAttribute('data-input');
     if(!tipo) return;
     if(tipo === 'buscar'){ filtro.texto = el.value; renderItems(); return; }
+    if(tipo === 'mov-cant'){ if(mov && mov.filas[+el.getAttribute('data-i')]) mov.filas[+el.getAttribute('data-i')].cant = el.value; return; }
     if(tipo === 'nota-titulo' || tipo === 'nota-texto'){
       var id = el.getAttribute('data-id');
       estado.notas.forEach(function(n){
@@ -863,6 +988,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.5}
     if(!tipo) return;
     if(tipo === 'cat'){ filtro.cat = el.value; renderItems(); return; }
     if(tipo === 'orden'){ filtro.orden = el.value; renderItems(); return; }
+    if(tipo === 'mov-item'){ if(mov && mov.filas[+el.getAttribute('data-i')]) mov.filas[+el.getAttribute('data-i')].id = el.value; return; }
     if(tipo === 'archivo'){
       var f = el.files && el.files[0];
       if(!f) return;
@@ -890,6 +1016,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.5}
     }
     if(e.key === 'Escape'){
       if(!$('#modal-item').hidden) cerrarModal();
+      if(!$('#modal-mov').hidden) cerrarMov();
       if(!$('#modal-datos').hidden) $('#modal-datos').hidden = true;
     }
   });
